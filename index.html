@@ -1,0 +1,2427 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>雪林小屋 · 雪地印记 3D</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Zhi+Mang+Xing&family=Liu+Jian+Mao+Cao&family=ZCOOL+KuaiLe&family=ZCOOL+QingKe+HuangYou&family=Great+Vibes&display=swap" rel="stylesheet">
+<style>
+:root{
+  color-scheme: dark;
+  --ink:#eaf3ff; --ink-2:#a8c0d8;
+  --glass:rgba(14,26,44,.46); --glass-hi:rgba(255,255,255,.13);
+  --line:rgba(178,210,240,.22);
+  --accent:#ffb45e;
+  --shadow:0 10px 30px rgba(0,0,0,.32);
+}
+@media (prefers-color-scheme: dark){ :root{ --ink:#eaf3ff; --ink-2:#a8c0d8; } }
+:root[data-theme="dark"]{ --ink:#eaf3ff; --ink-2:#a8c0d8; }
+:root[data-theme="light"]{ --ink:#f2f7ff; --ink-2:#b6c9dd; }
+
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;margin:0;overflow:hidden;background:#050a14;color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  -webkit-user-select:none;user-select:none;overscroll-behavior:none}
+#scene{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none;outline:none}
+#scene.paint{cursor:crosshair}
+#scene.orbit{cursor:grab}
+
+.brand{position:fixed;left:16px;top:calc(14px + env(safe-area-inset-top));pointer-events:none;z-index:4}
+.brand h1{margin:0;font-size:16px;font-weight:600;letter-spacing:.1em;text-shadow:0 2px 14px rgba(0,0,0,.6)}
+.brand h1 span{color:var(--accent);font-weight:400}
+.brand p{margin:5px 0 0;font-size:11.5px;letter-spacing:.05em;color:var(--ink-2)}
+
+.topr{position:fixed;right:14px;top:calc(12px + env(safe-area-inset-top));display:flex;gap:8px;z-index:6}
+.pill{display:flex;align-items:center;gap:6px;padding:8px 12px;border-radius:999px;border:1px solid var(--line);
+  background:var(--glass);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);color:var(--ink);
+  font:inherit;font-size:12px;cursor:pointer;box-shadow:var(--shadow);transition:background .2s,border-color .2s,transform .15s}
+.pill:hover{background:var(--glass-hi)}
+.pill:active{transform:scale(.96)}
+.pill.on{border-color:rgba(255,180,94,.65);background:linear-gradient(180deg,rgba(255,180,94,.32),rgba(255,180,94,.12));
+  box-shadow:0 0 20px rgba(255,168,74,.25),var(--shadow)}
+
+.bottom{position:fixed;left:0;right:0;bottom:calc(12px + env(safe-area-inset-bottom));display:flex;flex-direction:column;
+  align-items:center;gap:9px;pointer-events:none;z-index:6;padding:0 10px}
+.hint{font-size:11.5px;color:var(--ink-2);background:rgba(8,16,30,.38);border:1px solid rgba(178,210,240,.12);
+  padding:6px 14px;border-radius:999px;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);text-align:center;max-width:min(94vw,560px)}
+.seg{display:none;gap:4px;padding:4px;border-radius:999px;background:var(--glass);border:1px solid var(--line);
+  backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);pointer-events:auto}
+.seg.show{display:flex}
+.seg button{border:0;background:transparent;color:var(--ink-2);font:inherit;font-size:11.5px;padding:5px 12px;border-radius:999px;cursor:pointer}
+.seg button.on{background:rgba(255,180,94,.25);color:var(--ink)}
+.dock{display:flex;flex-wrap:wrap;justify-content:center;gap:7px;pointer-events:auto;max-width:760px}
+.tool{display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 10px;min-width:60px;border-radius:14px;
+  border:1px solid var(--line);background:var(--glass);backdrop-filter:blur(16px) saturate(1.2);-webkit-backdrop-filter:blur(16px) saturate(1.2);
+  color:var(--ink);font:inherit;font-size:11px;cursor:pointer;box-shadow:var(--shadow);transition:transform .18s,background .2s,border-color .2s,box-shadow .2s}
+.tool .ic{font-size:17px;line-height:1.05}
+.tool:hover{transform:translateY(-3px);background:var(--glass-hi)}
+.tool:active{transform:scale(.95)}
+.tool.on{background:linear-gradient(180deg,rgba(255,180,94,.32),rgba(255,180,94,.12));border-color:rgba(255,180,94,.62);
+  box-shadow:0 0 22px rgba(255,168,74,.28),0 10px 26px rgba(0,0,0,.3)}
+.sep{width:1px;align-self:stretch;background:var(--line);margin:4px 2px}
+
+/* 文字面板 */
+.panel{position:fixed;left:50%;bottom:calc(150px + env(safe-area-inset-bottom));transform:translate(-50%,12px);
+  width:min(440px,94vw);padding:14px 14px 12px;border-radius:18px;border:1px solid var(--line);
+  background:rgba(12,22,40,.72);backdrop-filter:blur(20px) saturate(1.2);-webkit-backdrop-filter:blur(20px) saturate(1.2);
+  box-shadow:0 18px 50px rgba(0,0,0,.45);z-index:8;opacity:0;pointer-events:none;transition:opacity .25s,transform .25s;
+  -webkit-user-select:text;user-select:text}
+.panel.show{opacity:1;pointer-events:auto;transform:translate(-50%,0)}
+.panel h3{margin:0 0 10px;font-size:13px;font-weight:600;letter-spacing:.06em;display:flex;justify-content:space-between;align-items:center}
+.panel h3 button{border:0;background:transparent;color:var(--ink-2);font-size:16px;cursor:pointer;padding:0 4px}
+.panel input{width:100%;padding:10px 12px;border-radius:12px;border:1px solid var(--line);background:rgba(255,255,255,.07);
+  color:var(--ink);font:inherit;font-size:15px;outline:none}
+.panel input:focus{border-color:rgba(255,180,94,.6)}
+.fonts{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin:10px 0}
+.font{border:1px solid var(--line);background:rgba(255,255,255,.05);color:var(--ink);border-radius:12px;padding:7px 4px 6px;
+  cursor:pointer;text-align:center;transition:border-color .2s,background .2s}
+.font b{display:block;font-size:22px;font-weight:400;line-height:1.25;white-space:nowrap;overflow:hidden}
+.font small{display:block;font-size:10.5px;color:var(--ink-2);margin-top:2px}
+.font.on{border-color:rgba(255,180,94,.7);background:rgba(255,180,94,.16)}
+.row{display:flex;gap:8px;align-items:center;justify-content:space-between}
+.row .seg{display:flex}
+.go{flex:1;border:0;border-radius:12px;padding:10px 14px;font:inherit;font-size:13px;font-weight:600;cursor:pointer;color:#2a1606;
+  background:linear-gradient(180deg,#ffc982,#ffa64a);box-shadow:0 6px 20px rgba(255,160,70,.35)}
+.go:active{transform:scale(.97)}
+.tip{font-size:10.5px;color:var(--ink-2);margin-top:8px;line-height:1.5}
+
+/* 宝丽来 */
+.polos{position:fixed;left:14px;bottom:calc(140px + env(safe-area-inset-bottom));display:flex;gap:10px;align-items:flex-end;z-index:5;pointer-events:none}
+.polaroid{position:relative;width:124px;padding:7px 7px 0;background:#f8f6f1;border-radius:2px;pointer-events:auto;cursor:pointer;
+  box-shadow:0 14px 30px rgba(0,0,0,.45);transform-origin:50% 100%;animation:poloIn .8s cubic-bezier(.18,.9,.28,1.16) both;transition:transform .3s}
+@keyframes poloIn{0%{opacity:0;transform:translateY(-40px) scale(.86)}100%{opacity:1}}
+.polaroid img{display:block;width:100%}
+.polaroid .cap{font-family:"Ma Shan Zheng","Kaiti SC","STKaiti",serif;color:#2b2b28;font-size:12.5px;text-align:center;padding:5px 2px 0}
+.polaroid .meta{font-size:8.5px;color:#9b9b93;text-align:center;padding:2px 0 7px;letter-spacing:.1em}
+.polaroid .x{position:absolute;top:-7px;right:-7px;width:20px;height:20px;border-radius:50%;background:rgba(20,30,44,.92);color:#dbe8f7;
+  border:1px solid rgba(255,255,255,.28);font-size:11px;line-height:18px;padding:0;cursor:pointer;opacity:0;transition:opacity .2s}
+.polaroid:hover .x{opacity:1}
+.flash{position:fixed;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:20}
+.flash.go{animation:flash .5s ease-out}
+@keyframes flash{0%{opacity:.85}100%{opacity:0}}
+
+.toast{position:fixed;left:50%;top:15%;transform:translate(-50%,-6px);background:rgba(10,20,36,.66);border:1px solid rgba(180,212,242,.22);
+  color:#eaf3ff;font-size:12.5px;padding:9px 18px;border-radius:999px;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+  opacity:0;pointer-events:none;transition:opacity .3s,transform .3s;z-index:15;white-space:nowrap;max-width:92vw;overflow:hidden;text-overflow:ellipsis}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+
+.temp{position:fixed;left:16px;top:calc(62px + env(safe-area-inset-top));display:flex;align-items:center;gap:7px;z-index:4;pointer-events:none;
+  padding:5px 11px 5px 8px;border-radius:999px;background:rgba(8,16,30,.4);border:1px solid rgba(178,210,240,.14);
+  backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);font-size:11px;color:var(--ink-2)}
+.temp .bar{width:86px;height:6px;border-radius:9px;background:rgba(255,255,255,.12);overflow:hidden}
+.temp .bar i{display:block;height:100%;width:100%;border-radius:9px;background:linear-gradient(90deg,#7fb4ff,#bfe0ff 35%,#ffd08a 65%,#ff8a3c);background-size:86px 100%;transition:width .4s}
+.temp em{font-style:normal;min-width:3.2em;color:var(--ink)}
+#frost{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:3;opacity:0;transition:opacity .8s}
+.fade{position:fixed;inset:0;pointer-events:none;z-index:25;opacity:0;transition:opacity .55s ease;
+  background:radial-gradient(ellipse at 50% 55%,#ffdcae 0%,#f0a868 45%,#5a2c14 100%)}
+.fade.on{opacity:1}
+.indock{display:none}
+body.inside .indock{display:flex}
+body.inside #dock,body.inside #brushSeg,body.inside #btnView,body.inside #btnCover{display:none !important}
+.placebar{display:none;align-items:center;gap:6px;padding:5px;border-radius:999px;background:var(--glass);border:1px solid rgba(255,180,94,.5);
+  backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);pointer-events:auto;box-shadow:0 0 24px rgba(255,168,74,.25),var(--shadow)}
+.placebar span{font-size:12px;color:var(--ink);padding:0 8px;white-space:nowrap}
+.placebar button{border:1px solid var(--line);background:rgba(255,255,255,.06);color:var(--ink);font:inherit;font-size:13px;
+  padding:7px 12px;border-radius:999px;cursor:pointer}
+.placebar button.ok{background:linear-gradient(180deg,#ffc982,#ffa64a);color:#2a1606;border:0;font-weight:600}
+body.placing .placebar{display:flex}
+body.placing #dock,body.placing #hint,body.placing #brushSeg{display:none !important}
+@keyframes call{0%,100%{box-shadow:var(--shadow)}50%{box-shadow:0 0 0 2px rgba(255,180,94,.7),0 0 26px rgba(255,160,70,.65)}}
+.tool.call{animation:call 1.3s ease-in-out infinite;border-color:rgba(255,180,94,.7)}
+@media (max-width:720px){ .temp{top:calc(56px + env(safe-area-inset-top));left:12px} .temp .bar{width:64px;background-size:64px 100%} .placebar span{font-size:11px;padding:0 4px} .placebar button{padding:6px 10px} }
+.loading{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;
+  background:radial-gradient(ellipse at 50% 40%,#13253f,#050a14 70%);z-index:30;transition:opacity .8s}
+.loading.hide{opacity:0;pointer-events:none}
+.loading .flake{font-size:34px;animation:spin 3s linear infinite}
+.loading p{margin:0;font-size:13px;color:var(--ink-2);letter-spacing:.1em}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+@media (max-width:720px){
+  .brand h1{font-size:14px}.brand p{font-size:10.5px}
+  .topr{gap:6px;right:10px}.pill{padding:7px 9px;font-size:11px}
+  .pill .tx{display:none}
+  .tool{padding:7px 7px;min-width:50px;font-size:10px;border-radius:12px}
+  .tool .ic{font-size:15px}
+  .dock{gap:5px}.sep{display:none}
+  .polaroid{width:92px}
+  .polos{bottom:calc(168px + env(safe-area-inset-bottom));left:10px}
+  .panel{bottom:calc(170px + env(safe-area-inset-bottom))}
+  .font b{font-size:19px}
+}
+</style>
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+} }
+</script>
+</head>
+<body>
+<canvas id="scene" class="paint" tabindex="0"></canvas>
+
+<canvas id="frost"></canvas>
+<div class="fade" id="fade"></div>
+<div class="loading" id="loading"><div class="flake">❄</div><p id="loadTx">雪正在落下…</p></div>
+
+<div class="brand">
+  <h1>雪林小屋 <span>·</span> 雪地印记</h1>
+  <p>林间的空地，留给你写字</p>
+</div>
+<div class="temp"><span>🌡️</span><div class="bar"><i id="tempFill"></i></div><em id="tempTx">暖和</em></div>
+
+<div class="topr">
+  <button class="pill" id="btnView" title="快捷键 V"><span>🗺️</span><span class="tx">平铺写字</span></button>
+  <button class="pill on" id="btnCover" title="新雪会慢慢盖住痕迹"><span>🌨️</span><span class="tx">落雪覆盖</span></button>
+  <button class="pill" id="btnSound"><span id="sndIc">🔈</span><span class="tx">声音</span></button>
+</div>
+
+<div class="bottom">
+  <div class="placebar" id="placebar">
+    <button data-p="l" title="逆时针 (Q)">↺</button><span id="placeTx">移动鼠标选位置，点击雪地印下</span><button data-p="r" title="顺时针 (E)">↻</button>
+    <button data-p="ok" class="ok">✓ 印下</button><button data-p="x" title="取消 (Esc)">✕</button>
+  </div>
+  <div class="hint" id="hint">按住拖动在雪地上写字 · 点右上「平铺写字」切换俯视，字会更端正</div>
+  <div class="seg" id="brushSeg">
+    <button data-b="0.10">细</button><button data-b="0.17" class="on">中</button><button data-b="0.28">粗</button>
+  </div>
+  <div class="dock" id="dock">
+    <button class="tool on" data-tool="write"><span class="ic">✍️</span>写字</button>
+    <button class="tool" data-tool="foot"><span class="ic">👣</span>脚印</button>
+    <button class="tool" data-tool="angel"><span class="ic">🛌</span>躺进雪地</button>
+    <button class="tool" data-tool="snowman"><span class="ic">⛄</span>堆雪人</button>
+    <button class="tool" data-tool="orbit"><span class="ic">🧭</span>环顾</button>
+    <span class="sep"></span>
+    <button class="tool" data-act="text"><span class="ic">🔤</span>文字印章</button>
+    <button class="tool" data-act="photo"><span class="ic">📷</span>宝丽来</button>
+    <button class="tool" data-act="clear"><span class="ic">🧹</span>清雪</button>
+    <button class="tool" data-act="cabin" id="btnCabin"><span class="ic">🏠</span>进屋取暖</button>
+  </div>
+  <div class="dock indock" id="indock">
+    <button class="tool" data-in="fire"><span class="ic">🪵</span>添柴</button>
+    <button class="tool" data-in="cocoa"><span class="ic">☕</span>热可可</button>
+    <button class="tool" data-in="cat"><span class="ic">🐱</span>撸猫</button>
+    <button class="tool" data-in="photo"><span class="ic">📷</span>宝丽来</button>
+    <button class="tool" data-in="out"><span class="ic">🚪</span>出门玩雪</button>
+  </div>
+</div>
+
+<div class="panel" id="panel">
+  <h3><span>🔤 把一句话印进雪地</span><button id="panelX">✕</button></h3>
+  <input id="txt" maxlength="14" placeholder="输入想写的字，比如：初雪快乐" value="初雪快乐">
+  <div class="fonts" id="fonts"></div>
+  <div class="row">
+    <div class="seg" id="sizeSeg"><button data-s="0.7">小</button><button data-s="1" class="on">中</button><button data-s="1.35">大</button></div>
+    <button class="go" id="goText">选位置，印到雪地 ❄</button>
+  </div>
+  <div class="tip">点按钮后会出现文字预览：电脑上移动鼠标选位置、点击印下（滚轮或 Q/E 旋转）；手机上拖动预览，点 ✓ 印下。字体从网络加载，若加载失败会自动换成系统楷体。</div>
+</div>
+
+<div class="polos" id="polos"></div>
+<div class="flash" id="flash"></div>
+<div class="toast" id="toast"></div>
+
+<script>
+setTimeout(function(){
+  if(!window.__snowReady){
+    var t=document.getElementById('loadTx');
+    if(t) t.textContent='3D 引擎加载较慢，请检查网络后刷新…';
+  }
+}, 9000);
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+/* ============================================================
+   0. 基础
+   ============================================================ */
+const isMobile = matchMedia('(max-width: 760px)').matches ||
+  /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
+const TAU = Math.PI * 2;
+const clamp = (v,a,b)=> v<a?a:(v>b?b:v);
+const lerp = (a,b,t)=> a+(b-a)*t;
+const ease = t=> t<.5 ? 4*t*t*t : 1-Math.pow(-2*t+2,3)/2;
+const easeOutBack = t=>{ const c1=1.70158,c3=c1+1; return 1+c3*Math.pow(t-1,3)+c1*Math.pow(t-1,2); };
+const easeOutBounce = t=>{ const n=7.5625,d=2.75;
+  if(t<1/d) return n*t*t; if(t<2/d) return n*(t-=1.5/d)*t+.75;
+  if(t<2.5/d) return n*(t-=2.25/d)*t+.9375; return n*(t-=2.625/d)*t+.984375; };
+function rng(seed){ return function(){ seed|=0; seed=seed+0x6D2B79F5|0; let t=Math.imul(seed^seed>>>15,1|seed);
+  t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
+
+/* 雪地写字区（世界单位） */
+const AW = 44, AD = 32, MARGIN = 1.2;
+const CW = isMobile ? 1024 : 2048;
+const CH = Math.round(CW * AD / AW);
+const PX = CW / AW;           // 每世界单位对应的像素
+const CABIN_Z = -23;
+
+/* ============================================================
+   1. 渲染器 / 场景 / 相机
+   ============================================================ */
+const canvas = document.getElementById('scene');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: !isMobile, powerPreference:'high-performance' });
+renderer.setPixelRatio(Math.min(devicePixelRatio || 1, isMobile ? 1.25 : 2));
+renderer.setSize(innerWidth, innerHeight);
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.0;
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+const scene = new THREE.Scene();
+const HORIZON = new THREE.Color('#33507a');
+scene.fog = new THREE.FogExp2(HORIZON, isMobile ? 0.0125 : 0.0105);
+
+const camera = new THREE.PerspectiveCamera(isMobile ? 55 : 48, innerWidth/innerHeight, 0.1, 1200);
+const controls = new OrbitControls(camera, canvas);
+controls.enableDamping = true;
+controls.dampingFactor = 0.08;
+controls.enablePan = false;
+controls.enableRotate = false;
+controls.minDistance = 8;
+controls.maxDistance = 90;
+controls.maxPolarAngle = 1.42;
+
+/* ============================================================
+   2. 天空、星星、月亮、极光
+   ============================================================ */
+{
+  const skyMat = new THREE.ShaderMaterial({
+    side: THREE.BackSide, depthWrite: false, fog: false,
+    uniforms: {
+      cTop: { value: new THREE.Color('#02050d') },
+      cMid: { value: new THREE.Color('#0b1a33') },
+      cHor: { value: HORIZON.clone() }
+    },
+    vertexShader: `varying vec3 vP; void main(){ vP = normalize(position);
+      gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }`,
+    fragmentShader: `uniform vec3 cTop; uniform vec3 cMid; uniform vec3 cHor; varying vec3 vP;
+      void main(){ float h = vP.y;
+        vec3 c = mix(cHor, cMid, smoothstep(0.0, 0.22, h));
+        c = mix(c, cTop, smoothstep(0.22, 0.85, h));
+        gl_FragColor = vec4(c, 1.0);
+        #include <tonemapping_fragment>
+        #include <colorspace_fragment>
+      }`
+  });
+  scene.add(new THREE.Mesh(new THREE.SphereGeometry(500, 32, 16), skyMat));
+
+  // 星星
+  const r = rng(77), n = isMobile ? 900 : 1800, pos = [];
+  for (let i=0;i<n;i++){
+    const th = r()*TAU, ph = Math.acos(lerp(0.12, 1, r()));
+    pos.push(Math.sin(ph)*Math.cos(th)*460, Math.cos(ph)*460, Math.sin(ph)*Math.sin(th)*460);
+  }
+  const sg = new THREE.BufferGeometry();
+  sg.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  scene.add(new THREE.Points(sg, new THREE.PointsMaterial({ color:'#dfe9ff', size: isMobile?1.3:1.5,
+    sizeAttenuation:false, fog:false, transparent:true, opacity:.85, depthWrite:false })));
+}
+
+const MOON_DIR = new THREE.Vector3(-0.55, 0.42, -0.72).normalize();
+{
+  const c = document.createElement('canvas'); c.width = c.height = 256;
+  const g = c.getContext('2d');
+  let gr = g.createRadialGradient(128,128,0,128,128,128);
+  gr.addColorStop(0,'rgba(220,235,255,.55)'); gr.addColorStop(.18,'rgba(190,215,250,.22)');
+  gr.addColorStop(.5,'rgba(150,185,235,.06)'); gr.addColorStop(1,'rgba(150,185,235,0)');
+  g.fillStyle = gr; g.fillRect(0,0,256,256);
+  gr = g.createRadialGradient(118,118,4,128,128,26);
+  gr.addColorStop(0,'#ffffff'); gr.addColorStop(.7,'#eef5ff'); gr.addColorStop(1,'#c9dcf5');
+  g.fillStyle = gr; g.beginPath(); g.arc(128,128,26,0,TAU); g.fill();
+  const tex = new THREE.CanvasTexture(c); tex.colorSpace = THREE.SRGBColorSpace;
+  const moon = new THREE.Sprite(new THREE.SpriteMaterial({ map:tex, fog:false, depthWrite:false, transparent:true }));
+  moon.position.copy(MOON_DIR).multiplyScalar(420);
+  moon.scale.set(150,150,1);
+  scene.add(moon);
+}
+
+const aurora = new THREE.Mesh(
+  new THREE.PlaneGeometry(900, 170, 1, 1),
+  new THREE.ShaderMaterial({
+    transparent:true, depthWrite:false, fog:false, blending:THREE.AdditiveBlending,
+    uniforms:{ uTime:{value:0} },
+    vertexShader:`varying vec2 vUv; void main(){ vUv=uv; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }`,
+    fragmentShader:`uniform float uTime; varying vec2 vUv;
+      void main(){ float x=vUv.x;
+        float w = sin(x*9.0+uTime*0.15)*0.10 + sin(x*23.0-uTime*0.11)*0.05;
+        float y = vUv.y - w;
+        float band = smoothstep(0.18,0.42,y)*smoothstep(0.95,0.48,y);
+        float rays = 0.55+0.45*sin(x*90.0+uTime*0.4+sin(x*13.0)*3.0);
+        vec3 c = mix(vec3(0.10,0.85,0.65), vec3(0.35,0.45,1.0), smoothstep(0.2,0.9,x));
+        c = mix(c, vec3(0.75,0.4,0.9), smoothstep(0.55,0.95,y)*0.4);
+        float a = band*rays*0.16*smoothstep(0.0,0.25,x)*smoothstep(1.0,0.75,x);
+        gl_FragColor = vec4(c*a, a); }`
+  })
+);
+aurora.position.set(40, 120, -380);
+scene.add(aurora);
+
+/* ============================================================
+   3. 灯光
+   ============================================================ */
+scene.add(new THREE.HemisphereLight('#8fb0e8', '#22304a', 0.75));
+const moonLight = new THREE.DirectionalLight('#c4d8ff', 1.35);
+moonLight.position.copy(MOON_DIR).multiplyScalar(60).add(new THREE.Vector3(0,0,-4));
+moonLight.target.position.set(0,0,-4);
+moonLight.castShadow = true;
+moonLight.shadow.mapSize.set(isMobile?1024:2048, isMobile?1024:2048);
+Object.assign(moonLight.shadow.camera, { left:-46, right:46, top:46, bottom:-46, near:1, far:160 });
+moonLight.shadow.bias = -0.0006;
+moonLight.shadow.normalBias = 0.04;
+scene.add(moonLight, moonLight.target);
+
+/* ============================================================
+   4. 地形（外圈雪丘）
+   ============================================================ */
+function groundH(x, z){
+  const dx = Math.max(0, Math.abs(x) - AW/2), dz = Math.max(0, Math.abs(z) - AD/2);
+  const d = Math.hypot(dx, dz);
+  if (d === 0){
+    return (Math.abs(x) < AW/2 - 0.01 && Math.abs(z) < AD/2 - 0.01) ? -0.35 : 0;
+  }
+  const cab = Math.hypot(x, z - CABIN_Z);
+  const clear = THREE.MathUtils.smoothstep(cab, 7, 15);
+  const ramp = THREE.MathUtils.smoothstep(d, 2, 16);
+  const hill = 1.4*Math.sin(x*0.08+1.3)*Math.cos(z*0.07) + 0.7*Math.sin(x*0.21+z*0.13) + 1.8 + d*0.04;
+  return Math.max(0, hill) * ramp * clear;
+}
+const SNOW_COLOR = '#e6eef8';
+{
+  const S = 264, seg = 132;
+  const g = new THREE.PlaneGeometry(S, S, seg, seg);
+  g.rotateX(-Math.PI/2);
+  const p = g.attributes.position;
+  for (let i=0;i<p.count;i++) p.setY(i, groundH(p.getX(i), p.getZ(i)));
+  g.computeVertexNormals();
+  const m = new THREE.Mesh(g, new THREE.MeshStandardMaterial({ color:SNOW_COLOR, roughness:.92, metalness:0 }));
+  m.receiveShadow = true;
+  scene.add(m);
+}
+
+/* ============================================================
+   5. 可书写的雪地（高度图 → 顶点位移 + 逐像素法线）
+   R 通道 = 凹痕深度，G 通道 = 被推开隆起的雪边
+   ============================================================ */
+const hc = document.createElement('canvas'); hc.width = CW; hc.height = CH;
+const hx = hc.getContext('2d');
+hx.fillStyle = '#000'; hx.fillRect(0,0,CW,CH);
+const hTex = new THREE.CanvasTexture(hc);
+hTex.generateMipmaps = false;
+hTex.minFilter = THREE.LinearFilter;
+hTex.magFilter = THREE.LinearFilter;
+let hDirty = false;
+
+const fieldUniforms = {
+  uH: { value: hTex },
+  uD: { value: 0.17 },
+  uSize: { value: new THREE.Vector2(AW, AD) },
+  uTexel: { value: new THREE.Vector2(1/CW, 1/CH) }
+};
+const fieldMat = new THREE.MeshStandardMaterial({ color:SNOW_COLOR, roughness:.9, metalness:0 });
+fieldMat.onBeforeCompile = (sh)=>{
+  Object.assign(sh.uniforms, fieldUniforms);
+  const common = `#include <common>
+    uniform sampler2D uH; uniform float uD; uniform vec2 uSize; uniform vec2 uTexel; varying vec2 vHUv;
+    float snowH(vec2 uv){ vec4 t = texture2D(uH, uv); return (t.g*0.45*(1.0-t.r) - t.r) * uD; }`;
+  sh.vertexShader = sh.vertexShader
+    .replace('#include <common>', common)
+    .replace('#include <begin_vertex>', `vec3 transformed = vec3(position);
+      vHUv = position.xy / uSize + 0.5;
+      transformed.z += snowH(vHUv);`);
+  sh.fragmentShader = sh.fragmentShader
+    .replace('#include <common>', common)
+    .replace('#include <color_fragment>', `#include <color_fragment>
+      { vec4 t = texture2D(uH, vHUv); float g = t.r; float rim = t.g*(1.0-g);
+        diffuseColor.rgb *= mix(vec3(1.0), vec3(0.60,0.72,0.93), smoothstep(0.0,1.0,g));
+        diffuseColor.rgb *= 1.0 + rim*0.10; }`)
+    .replace('#include <normal_fragment_maps>', `#include <normal_fragment_maps>
+      { vec2 ex = vec2(uTexel.x*1.5, 0.0); vec2 ey = vec2(0.0, uTexel.y*1.5);
+        float dx = (snowH(vHUv+ex) - snowH(vHUv-ex)) / (2.0*ex.x*uSize.x);
+        float dv = (snowH(vHUv+ey) - snowH(vHUv-ey)) / (2.0*ey.y*uSize.y);
+        vec3 nW = normalize(vec3(-dx, 1.0, dv));
+        normal = normalize((viewMatrix * vec4(nW, 0.0)).xyz); }`);
+};
+fieldMat.customProgramCacheKey = ()=> 'snowfield-v1';
+const field = new THREE.Mesh(new THREE.PlaneGeometry(AW, AD, isMobile?220:440, isMobile?160:320), fieldMat);
+field.rotation.x = -Math.PI/2;
+field.receiveShadow = true;
+scene.add(field);
+
+/* 世界坐标 ↔ 高度图像素 */
+const w2c = (x,z)=> [ (x + AW/2) * PX, (z + AD/2) * PX ];
+const c2w = (cx,cy)=> [ cx/PX - AW/2, cy/PX - AD/2 ];
+const inField = (x,z,m=MARGIN)=> Math.abs(x) < AW/2 - m && Math.abs(z) < AD/2 - m;
+
+/* 印章精灵 */
+function makeSprite(fn, w=64, h=64){ const c=document.createElement('canvas'); c.width=w; c.height=h; fn(c.getContext('2d'), w, h); return c; }
+const SPR_GROOVE = makeSprite((g)=>{ const r=g.createRadialGradient(32,32,0,32,32,32);
+  r.addColorStop(0,'rgba(255,0,0,1)'); r.addColorStop(.5,'rgba(255,0,0,.8)'); r.addColorStop(1,'rgba(255,0,0,0)');
+  g.fillStyle=r; g.fillRect(0,0,64,64); });
+const SPR_RIM = makeSprite((g)=>{ const r=g.createRadialGradient(32,32,0,32,32,32);
+  r.addColorStop(0,'rgba(0,255,0,0)'); r.addColorStop(.48,'rgba(0,255,0,0)'); r.addColorStop(.7,'rgba(0,255,0,1)'); r.addColorStop(1,'rgba(0,255,0,0)');
+  g.fillStyle=r; g.fillRect(0,0,64,64); });
+function bootShape(g, color, blur){
+  g.shadowColor = color; g.shadowBlur = blur; g.fillStyle = color;
+  g.beginPath(); g.ellipse(34, 30, 13, 22, 0.08, 0, TAU); g.fill();
+  g.beginPath(); g.ellipse(31, 74, 10, 13, 0, 0, TAU); g.fill();
+}
+const SPR_FOOT = makeSprite((g)=> bootShape(g,'rgba(255,0,0,1)',4), 64, 96);
+const SPR_FOOT_RIM = makeSprite((g)=> bootShape(g,'rgba(0,255,0,1)',10), 64, 96);
+
+function stamp(cx, cy, r, a){
+  hx.globalCompositeOperation = 'lighter';
+  hx.globalAlpha = a*0.38;
+  const R = r*2;
+  hx.drawImage(SPR_RIM, cx-R, cy-R, R*2, R*2);
+  hx.globalAlpha = a;
+  hx.drawImage(SPR_GROOVE, cx-r, cy-r, r*2, r*2);
+  hx.globalAlpha = 1;
+  hDirty = true;
+}
+/* 世界坐标印章 */
+function stampW(x, z, rW, a){
+  if (!inField(x, z, MARGIN*0.6)) return;
+  const [cx,cy] = w2c(x,z);
+  stamp(cx, cy, rW*PX, a);
+}
+function footprint(x, z, ang, left){
+  if (!inField(x, z)) return;
+  const [cx,cy] = w2c(x,z);
+  const L = 0.46*PX, Wd = L*0.62;
+  hx.save();
+  hx.translate(cx, cy);
+  hx.rotate(ang + Math.PI/2);
+  if (left) hx.scale(-1,1);
+  hx.globalCompositeOperation = 'lighter';
+  hx.globalAlpha = 0.45;
+  hx.drawImage(SPR_FOOT_RIM, -Wd*0.7, -L*0.68, Wd*1.4, L*1.36);
+  hx.globalAlpha = 0.9;
+  hx.drawImage(SPR_FOOT, -Wd/2, -L/2, Wd, L);
+  hx.restore();
+  hDirty = true;
+}
+
+/* 新雪覆盖：每次统一减去 1 级 */
+let coverOn = true, clearing = 0;
+function coverStep(k){
+  hx.globalCompositeOperation = 'difference';
+  hx.globalAlpha = 1;
+  hx.fillStyle = `rgb(${k},${k},0)`;
+  hx.fillRect(0,0,CW,CH);
+  hx.globalCompositeOperation = 'source-over';
+  hDirty = true;
+}
+
+/* ============================================================
+   6. 林中小屋（缩小，退到雪地后方）
+   ============================================================ */
+function woodTexture(snowy=true){
+  const c = document.createElement('canvas'); c.width = 256; c.height = 256;
+  const g = c.getContext('2d');
+  const n = 9, h = 256/n;
+  for (let i=0;i<n;i++){
+    const gr = g.createLinearGradient(0, i*h, 0, (i+1)*h);
+    gr.addColorStop(0,'#2a1810'); gr.addColorStop(.25,'#6b4530'); gr.addColorStop(.55,'#7a5038');
+    gr.addColorStop(.85,'#4a2e1f'); gr.addColorStop(1,'#20130c');
+    g.fillStyle = gr; g.fillRect(0, i*h, 256, h);
+  }
+  const r = rng(12);
+  g.globalAlpha = .18; g.strokeStyle = '#1b0f08';
+  for (let i=0;i<60;i++){ const y = r()*256; g.beginPath(); g.moveTo(r()*256,y); g.lineTo(r()*256, y+r()*2); g.stroke(); }
+  // 积雪落在原木缝里
+  g.globalAlpha = .35; g.fillStyle = '#dfe9f6';
+  if (snowy) for (let i=1;i<n;i++) for (let k=0;k<8;k++) g.fillRect(r()*256, i*h-1.5, 6+r()*22, 1.6);
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace;
+  return t;
+}
+const M = {
+  wood: new THREE.MeshStandardMaterial({ map: woodTexture(), roughness:.88 }),
+  darkWood: new THREE.MeshStandardMaterial({ color:'#2a1a12', roughness:.9 }),
+  roof: new THREE.MeshStandardMaterial({ color:'#26303e', roughness:.85 }),
+  snow: new THREE.MeshStandardMaterial({ color:'#f0f5fb', roughness:.8 }),
+  stone: new THREE.MeshStandardMaterial({ color:'#5b5f68', roughness:.95 }),
+  glow: new THREE.MeshBasicMaterial({ color:'#ffbf6e', toneMapped:false }),
+  bulb: new THREE.MeshBasicMaterial({ color:'#ffd79a', toneMapped:false }),
+  iron: new THREE.MeshStandardMaterial({ color:'#15181e', roughness:.6, metalness:.5 }),
+  ice: new THREE.MeshStandardMaterial({ color:'#cfe6ff', roughness:.15, transparent:true, opacity:.8 })
+};
+const shadowAll = (o)=> o.traverse(m=>{ if (m.isMesh){ m.castShadow = true; m.receiveShadow = true; } });
+
+let chimneyTop = new THREE.Vector3();
+let cabinGroup = null, cabinDoor = null;
+const windowLights = [];
+function buildCabin(){
+  const cab = new THREE.Group();
+  const W2 = 2.5, D2 = 1.8, WH = 2.4, a = 0.62;
+  const ridge = WH + W2*Math.tan(a);
+
+  const walls = new THREE.Mesh(new THREE.BoxGeometry(W2*2, WH, D2*2), M.wood);
+  walls.position.y = WH/2; cab.add(walls);
+  // 石头地基
+  const base = new THREE.Mesh(new THREE.BoxGeometry(W2*2+.2, .35, D2*2+.2), M.stone);
+  base.position.y = .1; cab.add(base);
+  // 角柱
+  for (const sx of [-1,1]) for (const sz of [-1,1]){
+    const p = new THREE.Mesh(new THREE.BoxGeometry(.24, WH+.1, .24), M.darkWood);
+    p.position.set(sx*W2, WH/2, sz*D2); cab.add(p);
+  }
+  // 山墙
+  const tri = new THREE.Shape(); tri.moveTo(-W2,0); tri.lineTo(W2,0); tri.lineTo(0, ridge-WH); tri.closePath();
+  const gableGeo = new THREE.ExtrudeGeometry(tri, { depth:.12, bevelEnabled:false });
+  for (const sz of [1,-1]){
+    const gm = new THREE.Mesh(gableGeo, M.wood);
+    gm.position.set(0, WH, sz>0 ? D2-.12 : -D2);
+    cab.add(gm);
+  }
+  // 屋顶 + 屋顶积雪
+  const L = W2/Math.cos(a) + .6, depth = D2*2 + .9;
+  for (const s of [1,-1]){
+    const dir = new THREE.Vector2(s*Math.cos(a), -Math.sin(a));
+    const nrm = new THREE.Vector2(s*Math.sin(a), Math.cos(a));
+    const roof = new THREE.Mesh(new THREE.BoxGeometry(L, .14, depth), M.roof);
+    roof.position.set(dir.x*L/2, ridge + dir.y*L/2 + .05, 0);
+    roof.rotation.z = -s*a;
+    cab.add(roof);
+    const sn = new THREE.Mesh(new THREE.BoxGeometry(L+.12, .24, depth+.12), M.snow);
+    sn.position.set(dir.x*L/2 + nrm.x*.17, ridge + dir.y*L/2 + .05 + nrm.y*.17, 0);
+    sn.rotation.z = -s*a;
+    cab.add(sn);
+    // 冰凌
+    const eaveX = dir.x*L, eaveY = ridge + dir.y*L;
+    const ir = rng(s>0?3:5);
+    for (let i=0;i<11;i++){
+      const h = .15 + ir()*.35;
+      const ic = new THREE.Mesh(new THREE.ConeGeometry(.045, h, 5), M.ice);
+      ic.rotation.x = Math.PI;
+      ic.position.set(eaveX, eaveY - h/2 - .02, lerp(-depth/2+.2, depth/2-.2, i/10));
+      cab.add(ic);
+    }
+  }
+  const ridgeSnow = new THREE.Mesh(new THREE.CylinderGeometry(.2,.2, D2*2+1.0, 10), M.snow);
+  ridgeSnow.rotation.x = Math.PI/2; ridgeSnow.position.y = ridge + .2; cab.add(ridgeSnow);
+
+  // 门
+  const doorway = new THREE.Mesh(new THREE.PlaneGeometry(.9, 1.6), M.glow);
+  doorway.position.set(0, 1.02, D2 + .004); cab.add(doorway);
+  const pivot = new THREE.Group(); pivot.position.set(-.475, 0, D2 + .04); cab.add(pivot);
+  cabinDoor = pivot;
+  const door = new THREE.Mesh(new THREE.BoxGeometry(.95, 1.65, .08), M.darkWood);
+  door.position.set(.475, .2 + .82, 0); pivot.add(door);
+  const knob = new THREE.Mesh(new THREE.SphereGeometry(.05, 8, 8), M.bulb);
+  knob.position.set(.8, 1.0, .06); pivot.add(knob);
+  const wreath = new THREE.Mesh(new THREE.TorusGeometry(.2, .06, 8, 18), new THREE.MeshStandardMaterial({ color:'#1f4a32', roughness:.8 }));
+  wreath.position.set(.475, 1.42, .06); pivot.add(wreath);
+  const bow = new THREE.Mesh(new THREE.SphereGeometry(.06, 8, 8), new THREE.MeshStandardMaterial({ color:'#c7402d' }));
+  bow.position.set(.475, 1.24, .1); pivot.add(bow);
+
+  // 窗户
+  const addWindow = (x, y, z, ry, w=.78, h=.78)=>{
+    const g = new THREE.Group();
+    const glass = new THREE.Mesh(new THREE.PlaneGeometry(w, h), M.glow);
+    g.add(glass);
+    const fr = (bw, bh, px, py)=>{ const b = new THREE.Mesh(new THREE.BoxGeometry(bw, bh, .07), M.darkWood); b.position.set(px, py, .02); g.add(b); };
+    fr(w+.14, .08, 0, h/2); fr(w+.14, .08, 0, -h/2); fr(.08, h, -w/2, 0); fr(.08, h, w/2, 0);
+    fr(.05, h, 0, 0); fr(w, .05, 0, 0);
+    const sill = new THREE.Mesh(new THREE.BoxGeometry(w+.3, .1, .22), M.snow);
+    sill.position.set(0, -h/2 - .07, .08); g.add(sill);
+    g.position.set(x, y, z); g.rotation.y = ry;
+    cab.add(g);
+  };
+  addWindow(-1.45, 1.35, D2 + .01, 0);
+  addWindow( 1.45, 1.35, D2 + .01, 0);
+  addWindow(0, WH + .75, D2 + .01, 0, .5, .5);
+  addWindow( W2 + .01, 1.35, 0, Math.PI/2);
+  addWindow(-W2 - .01, 1.35, 0, -Math.PI/2);
+
+  // 门灯
+  const lamp = new THREE.Mesh(new THREE.SphereGeometry(.09, 10, 10), M.bulb);
+  lamp.position.set(-.72, 1.9, D2 + .18); cab.add(lamp);
+
+  // 檐下暖灯串（沿山墙斜边）
+  const bulbGeo = new THREE.SphereGeometry(.055, 8, 8);
+  for (const s of [-1,1]){
+    for (let i=0;i<=8;i++){
+      const t = i/8;
+      const b = new THREE.Mesh(bulbGeo, M.bulb);
+      b.position.set(s*lerp(0, W2+.45, t), lerp(ridge + .02, WH - .3, t) - .12 - Math.sin(t*Math.PI*4)*.03, D2 + .5);
+      cab.add(b);
+    }
+  }
+
+  // 烟囱
+  const ch = new THREE.Mesh(new THREE.BoxGeometry(.55, 1.9, .55), M.stone);
+  ch.position.set(1.25, ridge - .1, -.6); cab.add(ch);
+  const chCap = new THREE.Mesh(new THREE.BoxGeometry(.7, .16, .7), M.snow);
+  chCap.position.set(1.25, ridge + .9, -.6); cab.add(chCap);
+
+  // 门前台阶与积雪堆
+  const step = new THREE.Mesh(new THREE.BoxGeometry(1.6, .18, .7), M.darkWood);
+  step.position.set(0, .12, D2 + .4); cab.add(step);
+  const drift = new THREE.SphereGeometry(1, 16, 10);
+  const dr = rng(9);
+  for (let i=0;i<9;i++){
+    const d = new THREE.Mesh(drift, M.snow);
+    const side = i%2 ? 1 : -1;
+    d.scale.set(.6+dr()*.7, .22+dr()*.18, .5+dr()*.5);
+    d.position.set(side*(1.1 + dr()*2), 0, D2 + .2 + dr()*.4);
+    if (i>5) d.position.set(side*(W2+.2), 0, lerp(-D2, D2, dr()));
+    cab.add(d);
+  }
+  // 木柴堆
+  const logGeo = new THREE.CylinderGeometry(.11, .11, 1.1, 8);
+  for (let i=0;i<7;i++){
+    const lg = new THREE.Mesh(logGeo, M.darkWood);
+    lg.rotation.x = Math.PI/2;
+    const row = i<4 ? 0 : (i<6 ? 1 : 2), col = i<4 ? i : (i<6 ? i-4 : 0);
+    lg.position.set(-W2 - .45, .15 + row*.2, -1.0 + col*.23 + row*.11);
+    cab.add(lg);
+  }
+  const logSnow = new THREE.Mesh(new THREE.BoxGeometry(.3, .08, 1.0), M.snow);
+  logSnow.position.set(-W2 - .45, .62, -.66); cab.add(logSnow);
+
+  shadowAll(cab);
+  cab.traverse(m=>{ if (m.material === M.glow || m.material === M.bulb || m.material === M.ice) m.castShadow = false; });
+  cab.position.set(0, 0, CABIN_Z);
+  cab.rotation.y = 0;
+  scene.add(cab);
+  cabinGroup = cab;
+
+  chimneyTop.set(1.25, ridge + 1.05, -.6).add(cab.position);
+
+  const wl = new THREE.PointLight('#ffad5a', 22, 16, 1.6);
+  wl.position.set(0, 1.5, D2 + 1.4).add(cab.position);
+  scene.add(wl); windowLights.push(wl);
+}
+buildCabin();
+
+/* 公园路灯、长椅、栅栏 */
+const lampLights = [];
+function buildPark(){
+  const mkLamp = (x, z)=>{
+    const g = new THREE.Group();
+    const pole = new THREE.Mesh(new THREE.CylinderGeometry(.06, .09, 3.0, 10), M.iron); pole.position.y = 1.5; g.add(pole);
+    const foot = new THREE.Mesh(new THREE.CylinderGeometry(.18, .22, .3, 10), M.iron); foot.position.y = .15; g.add(foot);
+    const cage = new THREE.Mesh(new THREE.CylinderGeometry(.16, .22, .42, 6, 1, true), M.iron); cage.position.y = 3.15; g.add(cage);
+    const bulb = new THREE.Mesh(new THREE.SphereGeometry(.15, 12, 12), M.bulb); bulb.position.y = 3.15; g.add(bulb);
+    const cap = new THREE.Mesh(new THREE.ConeGeometry(.3, .26, 6), M.iron); cap.position.y = 3.49; g.add(cap);
+    const capSnow = new THREE.Mesh(new THREE.SphereGeometry(.24, 10, 6, 0, TAU, 0, Math.PI/2), M.snow);
+    capSnow.position.y = 3.55; capSnow.scale.y = .5; g.add(capSnow);
+    shadowAll(g); bulb.castShadow = false;
+    g.position.set(x, groundH(x, z), z);
+    scene.add(g);
+    const l = new THREE.PointLight('#ffb468', 18, 13, 1.6);
+    l.position.set(x, 3.0, z); scene.add(l); lampLights.push(l);
+  };
+  mkLamp(-5.2, -17.6);
+  mkLamp( 5.2, -17.6);
+
+  // 长椅
+  const bench = new THREE.Group();
+  for (let i=0;i<4;i++){
+    const s = new THREE.Mesh(new THREE.BoxGeometry(2.2, .07, .16), M.darkWood);
+    s.position.set(0, .55, -.25 + i*.17); bench.add(s);
+  }
+  for (let i=0;i<3;i++){
+    const s = new THREE.Mesh(new THREE.BoxGeometry(2.2, .07, .14), M.darkWood);
+    s.position.set(0, .75 + i*.17, -.38); s.rotation.x = -.15; bench.add(s);
+  }
+  for (const sx of [-.95, .95]){
+    const l = new THREE.Mesh(new THREE.BoxGeometry(.08, .6, .6), M.iron); l.position.set(sx, .28, -.08); bench.add(l);
+  }
+  const bs = new THREE.Mesh(new THREE.BoxGeometry(2.1, .1, .55), M.snow); bs.position.set(0, .63, -.02); bench.add(bs);
+  shadowAll(bench);
+  bench.position.set(9.5, 0, -18.6); bench.rotation.y = -.25;
+  scene.add(bench);
+
+  // 栅栏
+  const postGeo = new THREE.BoxGeometry(.12, .9, .12);
+  const capGeo = new THREE.SphereGeometry(.1, 8, 6);
+  const fence = new THREE.Group();
+  for (const side of [-1,1]){
+    for (let i=0;i<7;i++){
+      const x = side*(3.6 + i*1.05), z = CABIN_Z + 2.6 + i*0.1;
+      const p = new THREE.Mesh(postGeo, M.darkWood); p.position.set(x, .45, z); fence.add(p);
+      const c = new THREE.Mesh(capGeo, M.snow); c.scale.y = .5; c.position.set(x, .92, z); fence.add(c);
+    }
+    for (const y of [.35, .7]){
+      const r = new THREE.Mesh(new THREE.BoxGeometry(6.4, .07, .05), M.darkWood);
+      r.position.set(side*(3.6 + 3.15), y, CABIN_Z + 2.9); r.rotation.y = -side*.016; fence.add(r);
+    }
+  }
+  shadowAll(fence);
+  scene.add(fence);
+}
+buildPark();
+
+/* 雪松林（实例化） */
+function buildForest(){
+  const r = rng(2024);
+  const spots = [];
+  const N = isMobile ? 130 : 280;
+  let guard = 0;
+  // 小屋两侧与身后的近树
+  const near = [[-7.5,-24],[-9.5,-27],[-6.5,-29.5],[7.8,-25],[10,-28.5],[6.8,-30.5],[-12,-21],[12.5,-21.5],[0,-31],[-3.5,-32.5],[3.8,-33]];
+  for (const [x,z] of near) spots.push([x, z, 1.1 + r()*.5]);
+  while (spots.length < N && guard++ < 6000){
+    const x = lerp(-120, 120, r()), z = lerp(-130, 40, r());
+    if (Math.abs(x) < AW/2 + 2.5 && Math.abs(z) < AD/2 + 2.5) continue;
+    if (Math.hypot(x, z - CABIN_Z) < 7) continue;
+    if (z > AD/2 - 2 && Math.abs(x) < 34) continue;
+    if (z > 30 && Math.abs(x) < 70) continue;
+    const back = z < -20 ? 1.4 : 1;
+    if (r() > .55*back && Math.hypot(x,z) > 70) continue;
+    spots.push([x, z, (.75 + r()*.9) * (Math.hypot(x,z) > 50 ? 1.3 : 1)]);
+  }
+  const parts = [];
+  const add = (geo, mat, shadow)=> parts.push({ geo, mat, shadow });
+  const tg = new THREE.CylinderGeometry(.16, .24, 1.2, 7); tg.translate(0, .6, 0);
+  add(tg, M.darkWood, true);
+  const pineMat = new THREE.MeshStandardMaterial({ color:'#1b3a33', roughness:.95 });
+  const tiers = [[1.7, 2.4, 1.5], [1.3, 2.1, 2.7], [.85, 1.8, 3.8]];
+  for (const [rad, h, y] of tiers){
+    const g = new THREE.ConeGeometry(rad, h, 9); g.translate(0, y, 0); add(g, pineMat, true);
+    const s = new THREE.ConeGeometry(rad*.82, h*.5, 9); s.translate(0, y + h*.27, 0); add(s, M.snow, false);
+  }
+  const dummy = new THREE.Object3D();
+  for (const p of parts){
+    const im = new THREE.InstancedMesh(p.geo, p.mat, spots.length);
+    spots.forEach(([x,z,s], i)=>{
+      dummy.position.set(x, groundH(x,z) - .15, z);
+      dummy.rotation.set(0, (x*13.7 + z*7.1) % TAU, 0);
+      dummy.scale.set(s, s*(.95 + ((x*z)%0.2)), s);
+      dummy.updateMatrix();
+      im.setMatrixAt(i, dummy.matrix);
+    });
+    im.castShadow = p.shadow && !isMobile;
+    im.receiveShadow = true;
+    scene.add(im);
+  }
+  if (isMobile){ // 手机只让近树投影
+    moonLight.shadow.camera.updateProjectionMatrix();
+  }
+}
+buildForest();
+
+/* ============================================================
+   7. 雪花 / 雪雾 / 炊烟
+   ============================================================ */
+const snowU = { uTime:{value:0}, uScale:{value: renderer.getPixelRatio()*(isMobile?1.4:1.2)}, uCenter:{value:new THREE.Vector3()} };
+{
+  const n = isMobile ? 2800 : 7500;
+  const pos = new Float32Array(n*3), rnd = new Float32Array(n);
+  for (let i=0;i<n;i++){
+    pos[i*3] = Math.random()*120 - 60;
+    pos[i*3+1] = Math.random()*36;
+    pos[i*3+2] = Math.random()*120 - 60;
+    rnd[i] = Math.random();
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  g.setAttribute('aRnd', new THREE.BufferAttribute(rnd, 1));
+  const m = new THREE.ShaderMaterial({
+    uniforms: snowU, transparent:true, depthWrite:false, fog:false,
+    vertexShader:`uniform float uTime; uniform float uScale; uniform vec3 uCenter; attribute float aRnd; varying float vA;
+      void main(){ vec3 p = position;
+        p.y = mod(p.y - uTime*(0.9 + aRnd*1.1), 36.0) - 2.0;
+        p.x = mod(p.x + uTime*0.35 + sin(uTime*0.7 + aRnd*50.0)*0.8 + 60.0, 120.0) - 60.0;
+        p.z = mod(p.z + cos(uTime*0.5 + aRnd*30.0)*0.6 + 60.0, 120.0) - 60.0;
+        p.xz += uCenter.xz;
+        vec4 mv = modelViewMatrix * vec4(p, 1.0);
+        float d = -mv.z;
+        gl_PointSize = uScale * (0.9 + aRnd*2.2) * 22.0 / max(d, 1.0);
+        vA = smoothstep(110.0, 10.0, d) * smoothstep(0.6, 3.0, d);
+        gl_Position = projectionMatrix * mv; }`,
+    fragmentShader:`varying float vA;
+      void main(){ float d = length(gl_PointCoord - 0.5);
+        float a = smoothstep(0.5, 0.08, d) * vA * 0.9;
+        gl_FragColor = vec4(0.94, 0.97, 1.0, a); }`
+  });
+  const pts = new THREE.Points(g, m); pts.frustumCulled = false;
+  scene.add(pts);
+}
+
+/* 扬雪粒子池 */
+const PUFF_N = 500;
+const puffPos = new Float32Array(PUFF_N*3), puffA = new Float32Array(PUFF_N), puffS = new Float32Array(PUFF_N);
+const puffV = new Float32Array(PUFF_N*3), puffL = new Float32Array(PUFF_N);
+let puffHead = 0;
+const puffGeo = new THREE.BufferGeometry();
+puffGeo.setAttribute('position', new THREE.BufferAttribute(puffPos, 3));
+puffGeo.setAttribute('aA', new THREE.BufferAttribute(puffA, 1));
+puffGeo.setAttribute('aS', new THREE.BufferAttribute(puffS, 1));
+{
+  const m = new THREE.ShaderMaterial({
+    uniforms:{ uScale: snowU.uScale }, transparent:true, depthWrite:false,
+    vertexShader:`uniform float uScale; attribute float aA; attribute float aS; varying float vA;
+      void main(){ vec4 mv = modelViewMatrix*vec4(position,1.0); vA = aA;
+        gl_PointSize = uScale*aS*60.0/max(-mv.z,1.0); gl_Position = projectionMatrix*mv; }`,
+    fragmentShader:`varying float vA; void main(){ float d = length(gl_PointCoord-0.5);
+        float a = smoothstep(0.5,0.0,d)*vA; gl_FragColor = vec4(0.93,0.96,1.0,a*0.75); }`
+  });
+  const p = new THREE.Points(puffGeo, m); p.frustumCulled = false; scene.add(p);
+}
+function puff(x, y, z, n, power=1){
+  if (isMobile) n = Math.ceil(n*.6);
+  for (let k=0;k<n;k++){
+    const i = puffHead; puffHead = (puffHead+1) % PUFF_N;
+    const a = Math.random()*TAU, sp = (.4 + Math.random())*1.6*power;
+    puffPos[i*3] = x + (Math.random()-.5)*.3; puffPos[i*3+1] = y; puffPos[i*3+2] = z + (Math.random()-.5)*.3;
+    puffV[i*3] = Math.cos(a)*sp; puffV[i*3+1] = (1 + Math.random()*1.6)*power; puffV[i*3+2] = Math.sin(a)*sp;
+    puffL[i] = 1; puffS[i] = .5 + Math.random()*1.1;
+  }
+}
+function updatePuffs(dt){
+  for (let i=0;i<PUFF_N;i++){
+    if (puffL[i] <= 0){ puffA[i] = 0; continue; }
+    puffL[i] -= dt*.9;
+    puffV[i*3+1] -= dt*3.2;
+    puffV[i*3] *= .97; puffV[i*3+2] *= .97;
+    puffPos[i*3] += puffV[i*3]*dt; puffPos[i*3+1] = Math.max(.02, puffPos[i*3+1] + puffV[i*3+1]*dt); puffPos[i*3+2] += puffV[i*3+2]*dt;
+    puffA[i] = Math.max(0, puffL[i]);
+  }
+  puffGeo.attributes.position.needsUpdate = true;
+  puffGeo.attributes.aA.needsUpdate = true;
+  puffGeo.attributes.aS.needsUpdate = true;
+}
+
+/* 炊烟 */
+const smokeTex = (()=>{ const c = makeSprite((g)=>{ const r=g.createRadialGradient(32,32,0,32,32,32);
+  r.addColorStop(0,'rgba(210,220,235,.9)'); r.addColorStop(.5,'rgba(190,205,225,.35)'); r.addColorStop(1,'rgba(190,205,225,0)');
+  g.fillStyle=r; g.fillRect(0,0,64,64); }); const t = new THREE.CanvasTexture(c); return t; })();
+const smokes = [];
+for (let i=0;i<(isMobile?10:16);i++){
+  const s = new THREE.Sprite(new THREE.SpriteMaterial({ map:smokeTex, transparent:true, depthWrite:false, opacity:0 }));
+  s.userData.t = i / (isMobile?10:16);
+  scene.add(s); smokes.push(s);
+}
+function updateSmoke(dt){
+  for (const s of smokes){
+    s.userData.t += dt*.09;
+    if (s.userData.t > 1) s.userData.t -= 1;
+    const t = s.userData.t;
+    s.position.set(chimneyTop.x + t*3.2 + Math.sin(t*6)*.25, chimneyTop.y + t*6, chimneyTop.z - t*.6);
+    const sc = .5 + t*2.8; s.scale.set(sc, sc, 1);
+    s.material.opacity = Math.sin(t*Math.PI)*.32;
+  }
+}
+
+/* ============================================================
+   8. 堆雪人（3D）
+   ============================================================ */
+function lumpySphere(r, seed){
+  const g = new THREE.SphereGeometry(r, 28, 20);
+  const p = g.attributes.position, v = new THREE.Vector3();
+  for (let i=0;i<p.count;i++){
+    v.fromBufferAttribute(p, i);
+    const n = Math.sin(v.x*7.1+seed)*Math.sin(v.y*6.3+seed*2)*Math.sin(v.z*8.2+seed*.5);
+    v.multiplyScalar(1 + n*.035);
+    p.setXYZ(i, v.x, v.y, v.z);
+  }
+  g.computeVertexNormals();
+  return g;
+}
+const coal = new THREE.MeshStandardMaterial({ color:'#16161a', roughness:.6 });
+const carrotMat = new THREE.MeshStandardMaterial({ color:'#ff8a2c', roughness:.6 });
+const SCARVES = ['#d9472f', '#ff9a3c', '#3c74d4', '#b8343c', '#2f8f7a'];
+const snowmen = [];
+let building = null;
+
+class Snowman {
+  constructor(x, z){
+    this.x = x; this.z = z;
+    this.s = .95 + Math.random()*.3;
+    this.step = 0;
+    this.t0 = 0;
+    const s = this.s;
+    this.r1 = .66*s; this.r2 = .48*s; this.r3 = .34*s;
+    this.y1 = this.r1*.86; this.y2 = this.y1 + this.r1*.78 + this.r2*.78; this.y3 = this.y2 + this.r2*.8 + this.r3*.84;
+    this.g = new THREE.Group();
+    this.g.position.set(x, 0, z);
+    this.g.rotation.y = Math.atan2(camera.position.x - x, camera.position.z - z);
+    scene.add(this.g);
+    const seed = Math.random()*10;
+    this.b1 = new THREE.Mesh(lumpySphere(this.r1, seed), M.snow);
+    this.b2 = new THREE.Mesh(lumpySphere(this.r2, seed+3), M.snow);
+    this.b3 = new THREE.Mesh(lumpySphere(this.r3, seed+7), M.snow);
+    for (const b of [this.b1, this.b2, this.b3]){ b.castShadow = b.receiveShadow = true; b.visible = false; this.g.add(b); }
+    this.acc = this.buildAcc();
+    this.acc.forEach(a=>{ a.visible = false; this.g.add(a); });
+    const ang = Math.random()*TAU;
+    this.dir = new THREE.Vector2(Math.cos(ang), Math.sin(ang));
+    this.rollLen = 3.4;
+    if (!inField(x + this.dir.x*this.rollLen, z + this.dir.y*this.rollLen, 1.5)) this.dir.multiplyScalar(-1);
+    this.lastRoll = null;
+  }
+  buildAcc(){
+    const s = this.s, r3 = this.r3, r2 = this.r2, y2 = this.y2, y3 = this.y3;
+    const list = [];
+    const mk = (geo, mat, x, y, z)=>{ const m = new THREE.Mesh(geo, mat); m.position.set(x,y,z); m.castShadow = true; m.userData.base = m.position.clone(); return m; };
+    const eyeG = new THREE.SphereGeometry(.045*s, 8, 8);
+    const eyes = new THREE.Group();
+    eyes.add(mk(eyeG, coal, -.12*s, y3 + .08*s, r3*.9));
+    eyes.add(mk(eyeG, coal,  .12*s, y3 + .08*s, r3*.9));
+    for (let i=0;i<5;i++){
+      const a = lerp(-.8, .8, i/4);
+      eyes.add(mk(new THREE.SphereGeometry(.028*s, 6, 6), coal, Math.sin(a)*r3*.42, y3 - .1*s - Math.cos(a)*.05*s + .05*s, r3*.88));
+    }
+    list.push(eyes);
+    const nose = mk(new THREE.ConeGeometry(.06*s, .36*s, 10), carrotMat, 0, y3, r3 + .14*s);
+    nose.rotation.x = Math.PI/2; list.push(nose);
+    const btn = new THREE.Group();
+    for (let i=0;i<3;i++) btn.add(mk(new THREE.SphereGeometry(.05*s, 8, 8), coal, 0, y2 + r2*.45 - i*r2*.42, r2*.93 - Math.abs(i-1)*.04));
+    list.push(btn);
+    const armMat = M.darkWood;
+    for (const sd of [-1,1]){
+      const arm = new THREE.Group();
+      const main = new THREE.Mesh(new THREE.CylinderGeometry(.022*s, .032*s, 1.0*s, 6), armMat);
+      main.position.y = .5*s; arm.add(main);
+      const twig = new THREE.Mesh(new THREE.CylinderGeometry(.015*s, .02*s, .3*s, 5), armMat);
+      twig.position.set(.08*s, .72*s, 0); twig.rotation.z = -.6; arm.add(twig);
+      arm.position.set(sd*r2*.85, y2 + .12*s, 0);
+      arm.rotation.z = -sd*1.05;
+      arm.traverse(m=>{ if (m.isMesh) m.castShadow = true; });
+      list.push(arm);
+    }
+    const hat = new THREE.Group();
+    const hatMat = new THREE.MeshStandardMaterial({ color:'#1d2636', roughness:.7 });
+    const brim = new THREE.Mesh(new THREE.CylinderGeometry(r3*1.1, r3*1.1, .04*s, 24), hatMat); brim.position.y = 0; hat.add(brim);
+    const crown = new THREE.Mesh(new THREE.CylinderGeometry(r3*.7, r3*.76, .44*s, 24), hatMat); crown.position.y = .22*s; hat.add(crown);
+    const band = new THREE.Mesh(new THREE.CylinderGeometry(r3*.775, r3*.775, .08*s, 24), new THREE.MeshStandardMaterial({ color:'#c7402d' })); band.position.y = .07*s; hat.add(band);
+    const hs = new THREE.Mesh(new THREE.CylinderGeometry(r3*.6, r3*.7, .05*s, 20), M.snow); hs.position.y = .46*s; hat.add(hs);
+    hat.position.set(0, y3 + r3*.78, 0); hat.rotation.z = .12;
+    hat.traverse(m=>{ if (m.isMesh) m.castShadow = true; });
+    list.push(hat);
+    const sc = new THREE.MeshStandardMaterial({ color: SCARVES[Math.floor(Math.random()*SCARVES.length)], roughness:.85 });
+    const scarf = new THREE.Group();
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(r3*.92, .085*s, 10, 24), sc); ring.rotation.x = Math.PI/2; scarf.add(ring);
+    const tail = new THREE.Mesh(new THREE.BoxGeometry(.16*s, .5*s, .06*s), sc); tail.position.set(r3*.45, -.25*s, r3*.85); tail.rotation.z = .2; scarf.add(tail);
+    scarf.position.set(0, y3 - r3*.82, 0);
+    scarf.traverse(m=>{ if (m.isMesh) m.castShadow = true; });
+    list.push(scarf);
+    return list;
+  }
+  next(now){
+    this.step++; this.t0 = now;
+    if (this.step === 1){ this.b1.visible = true; }
+    if (this.step === 2){ this.b2.visible = true; }
+    if (this.step === 3){ this.b3.visible = true; }
+    if (this.step === 4){ this.acc.forEach(a=> a.visible = true); }
+  }
+  update(now){
+    const t = (now - this.t0)/1000;
+    const toLocal = (wx, wz)=>{ // 世界偏移 → 组内局部
+      const ry = this.g.rotation.y, c = Math.cos(ry), s = Math.sin(ry);
+      return [wx*c - wz*s, wx*s + wz*c];
+    };
+    if (this.step === 1){
+      const p = clamp(t/1.1, 0, 1), e = ease(p);
+      const k = lerp(.4, 1, e);
+      const dist = (1-e)*this.rollLen;
+      const wx = this.dir.x*dist, wz = this.dir.y*dist;
+      const [lx, lz] = toLocal(wx, wz);
+      this.b1.scale.setScalar(k);
+      this.b1.position.set(lx, this.y1*k, lz);
+      this.b1.rotation.set(0,0,0);
+      const axis = new THREE.Vector3(this.dir.y, 0, -this.dir.x);
+      this.b1.quaternion.setFromAxisAngle(axis, -dist/this.r1);
+      // 滚过的雪地被压出一道
+      const gx = this.x + wx, gz = this.z + wz;
+      if (this.lastRoll){
+        const d = Math.hypot(gx - this.lastRoll[0], gz - this.lastRoll[1]);
+        const n = Math.ceil(d / .12);
+        for (let i=1;i<=n;i++) stampW(lerp(this.lastRoll[0], gx, i/n), lerp(this.lastRoll[1], gz, i/n), this.r1*.55*k, .16);
+      }
+      this.lastRoll = [gx, gz];
+      if (p < 1 && Math.random() < .35) puff(gx, .1, gz, 2, .5);
+    } else if (this.b1.visible){ this.b1.scale.setScalar(1); this.b1.position.set(0, this.y1, 0); }
+
+    const drop = (mesh, y, active)=>{
+      if (!mesh.visible) return;
+      if (active){
+        const p = clamp(t/.65, 0, 1);
+        mesh.position.set(0, y + (1 - easeOutBounce(p))*2.6, 0);
+        mesh.scale.setScalar(lerp(.6, 1, Math.min(1, p*2)));
+      } else { mesh.position.set(0, y, 0); mesh.scale.setScalar(1); }
+    };
+    drop(this.b2, this.y2, this.step === 2);
+    drop(this.b3, this.y3, this.step === 3);
+
+    if (this.step === 4){
+      this.acc.forEach((a, i)=>{
+        const p = clamp((t - i*.09)/.45, 0, 1);
+        a.scale.setScalar(Math.max(.001, easeOutBack(p)));
+      });
+    }
+  }
+}
+function snowmanTap(x, z, now){
+  if (!building){
+    if (!inField(x, z, 1.6)){ toast('雪人要堆在空地上哦'); return; }
+    building = new Snowman(x, z);
+    snowmen.push(building);
+  }
+  const sm = building;
+  sm.next(now);
+  const wp = new THREE.Vector3(sm.x, 0, sm.z);
+  if (sm.step === 1) toast('⛄ 1/4 · 滚一个大雪球当底座');
+  if (sm.step === 2){ toast('⛄ 2/4 · 身体放上去'); puff(wp.x, sm.y1 + sm.r1, wp.z, 14, .7); }
+  if (sm.step === 3){ toast('⛄ 3/4 · 脑袋按上'); puff(wp.x, sm.y2 + sm.r2, wp.z, 12, .6); }
+  if (sm.step === 4){
+    toast('⛄ 完成！胡萝卜、树枝手、帽子和围巾都戴好了');
+    puff(wp.x, sm.y3, wp.z, 26, 1);
+    // 雪人脚下踩出一圈
+    for (let a=0;a<TAU;a+=.25) stampW(sm.x + Math.cos(a)*sm.r1*1.25, sm.z + Math.sin(a)*sm.r1*1.25, .16, .3);
+    building = null;
+  }
+}
+
+/* ============================================================
+   9. 躺进雪地（3D 小人 + 雪天使）
+   ============================================================ */
+const angels = [];
+const skinMat = new THREE.MeshStandardMaterial({ color:'#f0c7a2', roughness:.7 });
+const coatMat = new THREE.MeshStandardMaterial({ color:'#e8843a', roughness:.75 });
+const pantsMat = new THREE.MeshStandardMaterial({ color:'#26385a', roughness:.8 });
+const capMat = new THREE.MeshStandardMaterial({ color:'#f3f1ec', roughness:.9 });
+
+class Angel {
+  constructor(x, z, now){
+    this.x = x; this.z = z; this.t0 = now; this.done = false;
+    const dx = camera.position.x - controls.target.x, dz = camera.position.z - controls.target.z;
+    this.ry = Math.atan2(dx, dz);
+    const g = this.g = new THREE.Group();
+    this.mats = [];
+    const mat = (m)=>{ const c = m.clone(); c.transparent = true; this.mats.push(c); return c; };
+    const coat = mat(coatMat), skin = mat(skinMat), pants = mat(pantsMat), cap = mat(capMat);
+    const body = new THREE.Mesh(new THREE.CapsuleGeometry(.24, .55, 6, 12), coat);
+    body.rotation.x = Math.PI/2; body.position.set(0, .26, -.25); g.add(body);
+    const head = new THREE.Mesh(new THREE.SphereGeometry(.2, 16, 12), skin); head.position.set(0, .26, -.86); g.add(head);
+    const hat = new THREE.Mesh(new THREE.SphereGeometry(.21, 16, 10, 0, TAU, 0, Math.PI/1.8), cap);
+    hat.rotation.x = -Math.PI/2; hat.position.set(0, .26, -.9); g.add(hat);
+    const pom = new THREE.Mesh(new THREE.SphereGeometry(.08, 8, 8), mat(new THREE.MeshStandardMaterial({ color:'#d24b32' })));
+    pom.position.set(0, .26, -1.12); g.add(pom);
+    const scarf = new THREE.Mesh(new THREE.TorusGeometry(.17, .06, 8, 16), mat(new THREE.MeshStandardMaterial({ color:'#d24b32' })));
+    scarf.position.set(0, .26, -.66); g.add(scarf);
+    this.arms = []; this.legs = [];
+    for (const sd of [-1,1]){
+      const ap = new THREE.Group(); ap.position.set(sd*.27, .24, -.5);
+      const arm = new THREE.Mesh(new THREE.CapsuleGeometry(.085, .5, 4, 8), coat);
+      arm.rotation.x = Math.PI/2; arm.position.z = .3; ap.add(arm);
+      const mit = new THREE.Mesh(new THREE.SphereGeometry(.1, 8, 8), mat(new THREE.MeshStandardMaterial({ color:'#d24b32' })));
+      mit.position.z = .62; ap.add(mit);
+      g.add(ap); this.arms.push([ap, sd]);
+      const lp = new THREE.Group(); lp.position.set(sd*.12, .22, .2);
+      const leg = new THREE.Mesh(new THREE.CapsuleGeometry(.1, .6, 4, 8), pants);
+      leg.rotation.x = Math.PI/2; leg.position.z = .4; lp.add(leg);
+      const boot = new THREE.Mesh(new THREE.BoxGeometry(.2, .22, .16), mat(new THREE.MeshStandardMaterial({ color:'#3a2418' })));
+      boot.position.set(0, .06, .82); lp.add(boot);
+      g.add(lp); this.legs.push([lp, sd]);
+    }
+    g.traverse(m=>{ if (m.isMesh){ m.castShadow = true; } });
+    g.position.set(x, 2, z);
+    g.rotation.y = this.ry;
+    scene.add(g);
+    this.landed = false;
+  }
+  w(lx, lz){ // 局部(x,z) → 世界
+    const c = Math.cos(this.ry), s = Math.sin(this.ry);
+    return [this.x + lx*c + lz*s, this.z - lx*s + lz*c];
+  }
+  update(now){
+    const t = (now - this.t0)/1000;
+    const g = this.g;
+    if (t < .5){
+      const p = t/.5;
+      g.position.y = lerp(2.2, 0, p*p);
+      g.rotation.x = lerp(-.5, 0, p);
+      return;
+    }
+    if (!this.landed){
+      this.landed = true;
+      g.position.y = 0; g.rotation.x = 0;
+      for (let z=-.6; z<=.25; z+=.06){ const [wx,wz] = this.w(0, z); stampW(wx, wz, .27, .32); }
+      for (let a=0;a<TAU;a+=.35){ const [wx,wz] = this.w(Math.cos(a)*.1, -.86 + Math.sin(a)*.1); stampW(wx, wz, .2, .35); }
+      const [cx, cz] = this.w(0, -.3);
+      puff(cx, .2, cz, 30, 1.1);
+    }
+    const SW0 = .5, SW1 = 3.1;
+    if (t < SW1){
+      const p = clamp((t - SW0)/(SW1 - SW0), 0, 1);
+      const osc = (1 - Math.cos(p*Math.PI*6))/2;
+      const th = lerp(.2, 2.55, osc), ph = lerp(.05, .55, osc);
+      const pth = this.pth ?? th, pph = this.pph ?? ph;
+      this.pth = th; this.pph = ph;
+      const na = Math.max(1, Math.ceil(Math.abs(th - pth)/.07));
+      for (const [ap, sd] of this.arms){
+        ap.rotation.y = sd*th;
+        for (let k=1;k<=na;k++){
+          const a = lerp(pth, th, k/na);
+          for (let r=.15; r<=.72; r+=.09){
+            const [wx, wz] = this.w(sd*.27 + sd*Math.sin(a)*r, -.5 + Math.cos(a)*r);
+            stampW(wx, wz, .14, .2);
+          }
+        }
+      }
+      const nl = Math.max(1, Math.ceil(Math.abs(ph - pph)/.05));
+      for (const [lp, sd] of this.legs){
+        lp.rotation.y = sd*ph;
+        for (let k=1;k<=nl;k++){
+          const a = lerp(pph, ph, k/nl);
+          for (let r=.1; r<=.9; r+=.1){
+            const [wx, wz] = this.w(sd*.12 + sd*Math.sin(a)*r, .2 + Math.cos(a)*r);
+            stampW(wx, wz, .15, .18);
+          }
+        }
+      }
+      return;
+    }
+    if (!this.filled){ // 补齐整片翅膀（低帧率设备也能完整留下雪天使）
+      this.filled = true;
+      for (let a=.2; a<=2.55; a+=.06) for (const sd of [-1,1]) for (let r=.15; r<=.72; r+=.09){
+        const [wx, wz] = this.w(sd*.27 + sd*Math.sin(a)*r, -.5 + Math.cos(a)*r); stampW(wx, wz, .14, .12); }
+      for (let a=.05; a<=.55; a+=.04) for (const sd of [-1,1]) for (let r=.1; r<=.9; r+=.1){
+        const [wx, wz] = this.w(sd*.12 + sd*Math.sin(a)*r, .2 + Math.cos(a)*r); stampW(wx, wz, .15, .12); }
+    }
+    const p = clamp((t - SW1)/.9, 0, 1);
+    g.position.y = easeOutBack(p)*1.2;
+    g.rotation.x = -p*1.2;
+    this.mats.forEach(m=> m.opacity = 1 - p);
+    if (p >= 1){
+      scene.remove(g);
+      g.traverse(m=>{ if (m.isMesh) m.geometry.dispose(); });
+      this.mats.forEach(m=> m.dispose());
+      this.done = true;
+    }
+  }
+}
+
+/* ============================================================
+   10. 视角：立体 / 平铺写字
+   ============================================================ */
+let viewMode = 'persp';
+let tween = null;
+function perspView(){
+  const a = camera.aspect;
+  const k = a < 1 ? 1/Math.pow(a, .72) : 1;
+  return { pos: new THREE.Vector3(0, 11.5*k, 25 + (k-1)*16), tgt: new THREE.Vector3(0, 0, -5) };
+}
+function topView(){
+  const a = camera.aspect, t = Math.tan(THREE.MathUtils.degToRad(camera.fov/2));
+  const fitW = a < 1 ? AW*.62 : AW + 1;
+  const h = Math.max((AD/2 + 1)/t, (fitW/2)/(t*a)) * 1.02;
+  return { pos: new THREE.Vector3(0, h, .001), tgt: new THREE.Vector3(0, 0, 0) };
+}
+function goView(mode, instant){
+  viewMode = mode;
+  const v = mode === 'top' ? topView() : perspView();
+  if (instant){
+    camera.position.copy(v.pos); controls.target.copy(v.tgt); camera.lookAt(v.tgt); controls.update();
+    tween = null; return;
+  }
+  tween = { p0: camera.position.clone(), t0v: controls.target.clone(), p1: v.pos, t1: v.tgt, start: performance.now(), dur: 1200 };
+  updateViewBtn(mode);
+}
+function updateViewBtn(mode){
+  const b = document.getElementById('btnView');
+  b.classList.toggle('on', mode === 'top');
+  b.querySelector('.tx').textContent = mode === 'top' ? '立体视角' : '平铺写字';
+  b.firstElementChild.textContent = mode === 'top' ? '🏔️' : '🗺️';
+  controls.maxPolarAngle = mode === 'top' ? .02 : 1.42;
+  controls.minPolarAngle = 0;
+}
+function updateTween(now){
+  if (!tween) return;
+  const p = clamp((now - tween.start)/tween.dur, 0, 1), e = ease(p);
+  // 弧线过渡：中途略微抬高
+  camera.position.lerpVectors(tween.p0, tween.p1, e);
+  camera.position.y += Math.sin(e*Math.PI)*(tween.arc ?? 4);
+  controls.target.lerpVectors(tween.t0v, tween.t1, e);
+  camera.lookAt(controls.target);
+  if (p >= 1){ const done = tween.done; tween = null; controls.update(); done && done(); }
+}
+
+/* ============================================================
+   11. 指针交互（直接对地平面求交，带合并事件 → 更灵敏）
+   ============================================================ */
+const ray = new THREE.Raycaster();
+const groundPlane = new THREE.Plane(new THREE.Vector3(0,1,0), 0);
+const ndc = new THREE.Vector2(), hit = new THREE.Vector3();
+function pick(clientX, clientY){
+  const r = canvas.getBoundingClientRect();
+  ndc.set(((clientX - r.left)/r.width)*2 - 1, -((clientY - r.top)/r.height)*2 + 1);
+  ray.setFromCamera(ndc, camera);
+  return ray.ray.intersectPlane(groundPlane, hit) ? [hit.x, hit.z] : null;
+}
+
+let tool = 'write';
+let brushW = .17;
+let drawing = false, activeId = null;
+let sP0 = null, sMid = null;        // 平滑笔画（画布像素）
+let fLast = null, fAcc = 0, fLeft = false, fAng = 0;
+
+// 光标环
+const cursor = new THREE.Mesh(new THREE.RingGeometry(.86, 1, 40), new THREE.MeshBasicMaterial({ color:'#ffd6a0', transparent:true, opacity:.55, depthWrite:false, toneMapped:false }));
+cursor.rotation.x = -Math.PI/2; cursor.position.y = .03; cursor.visible = false;
+scene.add(cursor);
+
+function strokeTo(cx, cy){
+  const r = brushW*PX;
+  const spacing = Math.max(1, r*.32);
+  if (!sP0){ sP0 = [cx,cy]; sMid = [cx,cy]; stamp(cx, cy, r, .42); return; }
+  const mid = [(sP0[0]+cx)/2, (sP0[1]+cy)/2];
+  // 二次贝塞尔：sMid → (控制点 sP0) → mid
+  const len = Math.hypot(sP0[0]-sMid[0], sP0[1]-sMid[1]) + Math.hypot(mid[0]-sP0[0], mid[1]-sP0[1]);
+  const n = Math.max(1, Math.ceil(len/spacing));
+  for (let i=1;i<=n;i++){
+    const t = i/n, u = 1-t;
+    const x = u*u*sMid[0] + 2*u*t*sP0[0] + t*t*mid[0];
+    const y = u*u*sMid[1] + 2*u*t*sP0[1] + t*t*mid[1];
+    const [wx, wz] = c2w(x, y);
+    if (inField(wx, wz)) stamp(x, y, r, .42);
+  }
+  sMid = mid; sP0 = [cx, cy];
+}
+function strokeEnd(){
+  if (sP0 && sMid){
+    const r = brushW*PX, spacing = Math.max(1, r*.32);
+    const d = Math.hypot(sP0[0]-sMid[0], sP0[1]-sMid[1]), n = Math.ceil(d/spacing);
+    for (let i=1;i<=n;i++){
+      const x = lerp(sMid[0], sP0[0], i/n), y = lerp(sMid[1], sP0[1], i/n);
+      const [wx, wz] = c2w(x, y);
+      if (inField(wx, wz)) stamp(x, y, r, .42);
+    }
+  }
+  sP0 = sMid = null;
+}
+function footTo(x, z){
+  if (!fLast){ fLast = [x,z]; fAcc = .55; return; }
+  const dx = x - fLast[0], dz = z - fLast[1], d = Math.hypot(dx, dz);
+  if (d < 1e-4) return;
+  fAng = Math.atan2(dz, dx);
+  const STEP = .62;
+  let walked = 0;
+  while (fAcc + (d - walked) >= STEP){
+    const need = STEP - fAcc;
+    walked += need; fAcc = 0;
+    const t = walked/d;
+    const px = fLast[0] + dx*t, pz = fLast[1] + dz*t;
+    const side = fLeft ? -1 : 1;
+    const ox = -Math.sin(fAng)*.15*side, oz = Math.cos(fAng)*.15*side;
+    footprint(px + ox, pz + oz, fAng, fLeft);
+    if (Math.random() < .5) puff(px + ox, .05, pz + oz, 2, .35);
+    fLeft = !fLeft;
+    crunch();
+  }
+  fAcc += d - walked;
+  fLast = [x, z];
+}
+
+function handleMove(e){
+  const evs = (e.getCoalescedEvents && e.getCoalescedEvents().length) ? e.getCoalescedEvents() : [e];
+  for (const ev of evs){
+    const p = pick(ev.clientX, ev.clientY);
+    if (!p) continue;
+    if (tool === 'write'){ const [cx,cy] = w2c(p[0], p[1]); strokeTo(cx, cy); }
+    else if (tool === 'foot') footTo(p[0], p[1]);
+  }
+}
+
+function setNdc(x, y){ const r = canvas.getBoundingClientRect(); ndc.set(((x - r.left)/r.width)*2 - 1, -((y - r.top)/r.height)*2 + 1); }
+function hitCabin(x, y){ if (!cabinGroup) return false; setNdc(x, y); ray.setFromCamera(ndc, camera); return ray.intersectObject(cabinGroup, true).length > 0; }
+let hoverT = 0;
+canvas.addEventListener('pointerdown', (e)=>{
+  if (mode === 'in'){ inDown(e); return; }
+  if (mode !== 'out') return;
+  if (e.button !== undefined && e.button !== 0) return;
+  if (placing){
+    const q = pick(e.clientX, e.clientY); if (!q) return;
+    setPlace(q[0], q[1]);
+    if (e.pointerType === 'mouse') commitPlace();
+    else { placing.dragging = true; activeId = e.pointerId; canvas.setPointerCapture && canvas.setPointerCapture(e.pointerId); }
+    return;
+  }
+  if (tool === 'orbit') return;
+  if (hitCabin(e.clientX, e.clientY)){ enterCabin(); return; }
+  const p = pick(e.clientX, e.clientY);
+  if (!p) return;
+  const now = performance.now();
+  if (tool === 'angel'){
+    if (!inField(p[0], p[1], 1.8)){ toast('换块空地躺下吧'); return; }
+    angels.push(new Angel(p[0], p[1], now));
+    toast('🛌 扑通！躺进雪里挥挥手臂……');
+    return;
+  }
+  if (tool === 'snowman'){ snowmanTap(p[0], p[1], now); return; }
+  if (!inField(p[0], p[1])) return;
+  drawing = true; activeId = e.pointerId;
+  canvas.setPointerCapture && canvas.setPointerCapture(e.pointerId);
+  if (tool === 'write'){ const [cx,cy] = w2c(p[0], p[1]); sP0 = null; strokeTo(cx, cy); }
+  else if (tool === 'foot'){ fLast = null; footTo(p[0], p[1]); }
+});
+canvas.addEventListener('pointermove', (e)=>{
+  if (mode === 'in'){ inMove(e); return; }
+  if (mode !== 'out') return;
+  if (placing){
+    if (e.pointerType === 'mouse' || placing.dragging){ const q = pick(e.clientX, e.clientY); if (q) setPlace(q[0], q[1]); }
+    return;
+  }
+  if (e.pointerType === 'mouse' && !drawing && tool !== 'orbit'){
+    const now = performance.now();
+    if (now - hoverT > 90){ hoverT = now; canvas.style.cursor = hitCabin(e.clientX, e.clientY) ? 'pointer' : ''; }
+  }
+  if (tool === 'write' || tool === 'foot'){
+    const p = pick(e.clientX, e.clientY);
+    if (p && inField(p[0], p[1]) && e.pointerType !== 'touch'){
+      cursor.visible = true;
+      cursor.position.set(p[0], .03, p[1]);
+      const s = tool === 'write' ? brushW*1.25 : .4;
+      cursor.scale.setScalar(s);
+    } else cursor.visible = false;
+  }
+  if (!drawing || e.pointerId !== activeId) return;
+  handleMove(e);
+});
+const endDraw = (e)=>{
+  if (mode === 'in'){ inUp(e); return; }
+  if (placing){ placing.dragging = false; return; }
+  if (!drawing || (e && e.pointerId !== activeId)) return;
+  drawing = false; activeId = null;
+  if (tool === 'write') strokeEnd();
+  fLast = null;
+};
+canvas.addEventListener('pointerup', endDraw);
+canvas.addEventListener('pointercancel', endDraw);
+canvas.addEventListener('pointerleave', ()=>{ cursor.visible = false; });
+canvas.addEventListener('contextmenu', e=> e.preventDefault());
+
+/* ============================================================
+   12. 文字印章（多种特色字体）
+   ============================================================ */
+const FONTS = [
+  { key:'msz', name:'毛笔楷书', fam:'"Ma Shan Zheng"', sample:'雪' },
+  { key:'zmx', name:'行书',     fam:'"Zhi Mang Xing"', sample:'雪' },
+  { key:'ljm', name:'狂草',     fam:'"Liu Jian Mao Cao"', sample:'雪' },
+  { key:'kl',  name:'站酷快乐', fam:'"ZCOOL KuaiLe"', sample:'雪' },
+  { key:'hy',  name:'黄油体',   fam:'"ZCOOL QingKe HuangYou"', sample:'雪' },
+  { key:'gv',  name:'英文花体', fam:'"Great Vibes"', sample:'Snow' }
+];
+const FALLBACK = '"Kaiti SC","STKaiti","KaiTi","楷体",serif';
+let fontKey = 'msz', sizeK = 1;
+{
+  const box = document.getElementById('fonts');
+  for (const f of FONTS){
+    const b = document.createElement('button');
+    b.className = 'font' + (f.key === fontKey ? ' on' : '');
+    b.dataset.k = f.key;
+    b.innerHTML = `<b style='font-family:${f.fam},${FALLBACK}'>${f.sample}</b><small>${f.name}</small>`;
+    box.appendChild(b);
+  }
+  box.addEventListener('click', (e)=>{
+    const b = e.target.closest('.font'); if (!b) return;
+    fontKey = b.dataset.k;
+    box.querySelectorAll('.font').forEach(x=> x.classList.toggle('on', x === b));
+    const f = FONTS.find(x=> x.key === fontKey);
+    document.getElementById('txt').style.fontFamily = `${f.fam},${FALLBACK}`;
+  });
+  document.getElementById('txt').style.fontFamily = `${FONTS[0].fam},${FALLBACK}`;
+  document.getElementById('sizeSeg').addEventListener('click', (e)=>{
+    const b = e.target.closest('button'); if (!b) return;
+    sizeK = parseFloat(b.dataset.s);
+    document.querySelectorAll('#sizeSeg button').forEach(x=> x.classList.toggle('on', x === b));
+  });
+}
+async function ensureFont(f, text){
+  try {
+    await Promise.race([ document.fonts.load(`80px ${f.fam}`, text), new Promise(r=> setTimeout(r, 3000)) ]);
+    return document.fonts.check(`80px ${f.fam}`, text);
+  } catch(e){ return false; }
+}
+let textJobs = [];
+async function stampText(){
+  const text = document.getElementById('txt').value.trim();
+  if (!text){ toast('先写点什么吧'); return; }
+  const f = FONTS.find(x=> x.key === fontKey);
+  const ok = await ensureFont(f, text);
+  if (!ok) toast('字体没能从网络加载，先用楷体代替');
+  const family = `${f.fam},${FALLBACK}`;
+
+  if (mode !== 'out') return;
+  const dx = camera.position.x - controls.target.x, dz = camera.position.z - controls.target.z;
+  const theta = viewMode === 'top' ? 0 : Math.atan2(-dx, dz);
+
+  const latin = /^[\x00-\x7F]+$/.test(text);
+  let fontPx = (latin ? 5.6 : 4.2) * sizeK * PX;
+  const meas = document.createElement('canvas').getContext('2d');
+  meas.font = `${fontPx}px ${family}`;
+  let w = meas.measureText(text).width;
+  const maxW = (AW - 2*MARGIN - 6) * PX;
+  if (w > maxW){ fontPx *= maxW / w; meas.font = `${fontPx}px ${family}`; w = meas.measureText(text).width; }
+  const pad = Math.ceil(fontPx*.35);
+  const cw = Math.ceil(w + pad*2), ch = Math.ceil(fontPx*1.45 + pad*2);
+
+  const mask = document.createElement('canvas'); mask.width = cw; mask.height = ch;
+  const mg = mask.getContext('2d');
+  mg.font = `${fontPx}px ${family}`;
+  mg.textAlign = 'center'; mg.textBaseline = 'middle';
+  mg.fillStyle = '#fff'; mg.strokeStyle = '#fff';
+  mg.lineJoin = 'round'; mg.lineWidth = Math.max(2, PX*.07);
+  mg.fillText(text, cw/2, ch/2); mg.strokeText(text, cw/2, ch/2);
+
+  const tint = (color, blur)=>{
+    const t = document.createElement('canvas'); t.width = cw; t.height = ch;
+    const tg = t.getContext('2d');
+    tg.drawImage(mask, 0, 0);
+    tg.globalCompositeOperation = 'source-in';
+    tg.fillStyle = color; tg.fillRect(0, 0, cw, ch);
+    const o = document.createElement('canvas'); o.width = cw; o.height = ch;
+    const og = o.getContext('2d');
+    og.shadowColor = color; og.shadowBlur = blur;
+    og.drawImage(t, 0, 0);
+    return o;
+  };
+  const R = tint('rgb(255,0,0)', Math.max(1.5, PX*.05));
+  const G = tint('rgb(0,255,0)', Math.max(4, PX*.28));
+
+  closePanel();
+  cancelPlacing();
+  startPlacing({ R, G, cw, ch, mask, text, theta });
+}
+
+/* ---------- 放置预览 ---------- */
+const isCoarse = matchMedia('(pointer: coarse)').matches;
+let placing = null;
+function startPlacing(job){
+  const w = job.cw/PX, h = job.ch/PX;
+  const pc = document.createElement('canvas'); pc.width = job.cw; pc.height = job.ch;
+  const pg = pc.getContext('2d');
+  pg.drawImage(job.mask, 0, 0);
+  pg.globalCompositeOperation = 'source-in'; pg.fillStyle = '#ffd9a3'; pg.fillRect(0, 0, job.cw, job.ch);
+  const tex = new THREE.CanvasTexture(pc); tex.colorSpace = THREE.SRGBColorSpace;
+  const geo = new THREE.PlaneGeometry(w, h); geo.rotateX(-Math.PI/2);
+  const grp = new THREE.Group();
+  const mat = new THREE.MeshBasicMaterial({ map:tex, transparent:true, opacity:.8, depthWrite:false, toneMapped:false });
+  grp.add(new THREE.Mesh(geo, mat));
+  const pts = [[-w/2,-h/2],[w/2,-h/2],[w/2,h/2],[-w/2,h/2]].map(([x,z])=> new THREE.Vector3(x, 0, z));
+  grp.add(new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints(pts),
+    new THREE.LineBasicMaterial({ color:'#ffd9a3', transparent:true, opacity:.6, depthWrite:false, toneMapped:false })));
+  scene.add(grp);
+  const c = pick(innerWidth/2, innerHeight*.5) || [0, 0];
+  placing = { ...job, w, h, grp, mat, x:c[0], z:c[1], dragging:false };
+  setPlace(c[0], c[1]);
+  cursor.visible = false;
+  document.body.classList.add('placing');
+  controls.enableRotate = false; controls.enableZoom = false;
+  document.getElementById('placeTx').textContent = isCoarse ? '拖动文字到想印的位置，再点 ✓' : '移动鼠标选位置，点击雪地印下';
+}
+function setPlace(x, z){
+  const p = placing; if (!p) return;
+  const c = Math.abs(Math.cos(p.theta)), s = Math.abs(Math.sin(p.theta));
+  const ex = (c*p.w + s*p.h)/2, ez = (s*p.w + c*p.h)/2;
+  const lx = Math.max(0, AW/2 - MARGIN - ex), lz = Math.max(0, AD/2 - MARGIN - ez);
+  p.x = clamp(x, -lx, lx); p.z = clamp(z, -lz, lz);
+  p.grp.position.set(p.x, .08, p.z);
+  p.grp.rotation.y = -p.theta;
+}
+function rotatePlace(d){ if (!placing) return; placing.theta += d; setPlace(placing.x, placing.z); }
+function commitPlace(){
+  const p = placing; if (!p) return;
+  const [cx, cy] = w2c(p.x, p.z);
+  textJobs.push({ R:p.R, G:p.G, cw:p.cw, ch:p.ch, cx, cy, theta:p.theta, start: performance.now(), dur: 900 + p.text.length*180, x: 0 });
+  toast(`❄ 正在把「${p.text}」写进雪地…`);
+  cancelPlacing();
+}
+function cancelPlacing(){
+  if (!placing) return;
+  scene.remove(placing.grp);
+  placing.grp.traverse(o=>{ if (o.geometry) o.geometry.dispose(); if (o.material){ if (o.material.map) o.material.map.dispose(); o.material.dispose(); } });
+  placing = null;
+  document.body.classList.remove('placing');
+  controls.enableRotate = tool === 'orbit'; controls.enableZoom = true;
+}
+document.getElementById('placebar').addEventListener('click', (e)=>{
+  const b = e.target.closest('button'); if (!b) return;
+  const a = b.dataset.p;
+  if (a === 'l') rotatePlace(-Math.PI/12);
+  if (a === 'r') rotatePlace(Math.PI/12);
+  if (a === 'ok') commitPlace();
+  if (a === 'x'){ cancelPlacing(); toast('已取消'); }
+});
+canvas.addEventListener('wheel', (e)=>{ if (placing){ e.preventDefault(); rotatePlace(e.deltaY > 0 ? .07 : -.07); } }, { passive:false });
+function updateTextJobs(now){
+  for (let i=textJobs.length-1;i>=0;i--){
+    const j = textJobs[i];
+    const p = clamp((now - j.start)/j.dur, 0, 1);
+    const x1 = j.cw * ease(p);
+    if (x1 > j.x){
+      hx.save();
+      hx.translate(j.cx, j.cy); hx.rotate(j.theta);
+      hx.beginPath(); hx.rect(-j.cw/2 + j.x, -j.ch/2, x1 - j.x, j.ch); hx.clip();
+      hx.globalCompositeOperation = 'lighter';
+      hx.globalAlpha = .55; hx.drawImage(j.G, -j.cw/2, -j.ch/2);
+      hx.globalAlpha = 1;   hx.drawImage(j.R, -j.cw/2, -j.ch/2);
+      hx.restore();
+      hDirty = true;
+      // 书写前沿扬起雪粒
+      const lx = -j.cw/2 + x1, ly = (Math.random()-.5)*j.ch*.5;
+      const cx = j.cx + lx*Math.cos(j.theta) - ly*Math.sin(j.theta);
+      const cy = j.cy + lx*Math.sin(j.theta) + ly*Math.cos(j.theta);
+      const [wx, wz] = c2w(cx, cy);
+      if (Math.random() < .6) puff(wx, .05, wz, 2, .45);
+      j.x = x1;
+    }
+    if (p >= 1) textJobs.splice(i, 1);
+  }
+}
+
+/* ============================================================
+   13. UI
+   ============================================================ */
+const HINTS = {
+  write:  '按住拖动在雪地上写字 · 右上「平铺写字」切换俯视，字更端正',
+  foot:   '按住拖动，左右脚交替踩出一串脚印',
+  angel:  '点一下雪地：小人会躺进去挥动手臂，留下雪天使',
+  snowman:'点雪地滚出雪球，再连点 3 下：身体 → 脑袋 → 装扮',
+  orbit:  '拖动旋转视角，滚轮 / 双指缩放'
+};
+function setTool(t){
+  tool = t;
+  if (t !== 'snowman' && building){ /* 保留未完成的雪人 */ building = null; }
+  document.querySelectorAll('.tool[data-tool]').forEach(b=> b.classList.toggle('on', b.dataset.tool === t));
+  document.getElementById('hint').textContent = HINTS[t];
+  document.getElementById('brushSeg').classList.toggle('show', t === 'write');
+  controls.enableRotate = t === 'orbit';
+  canvas.className = t === 'orbit' ? 'orbit' : 'paint';
+  cursor.visible = false;
+  if (t === 'orbit' && viewMode === 'top') goView('persp');
+}
+document.getElementById('dock').addEventListener('click', (e)=>{
+  const b = e.target.closest('.tool'); if (!b) return;
+  if (b.dataset.tool){ setTool(b.dataset.tool); return; }
+  const a = b.dataset.act;
+  if (a === 'text') togglePanel();
+  if (a === 'cabin') enterCabin();
+  if (a === 'photo') takePhoto();
+  if (a === 'clear'){ clearing = 18; puff(0, .1, 4, 40, 1.6); toast('❄ 一场新雪落下，雪地又干净了'); }
+});
+document.getElementById('brushSeg').addEventListener('click', (e)=>{
+  const b = e.target.closest('button'); if (!b) return;
+  brushW = parseFloat(b.dataset.b);
+  document.querySelectorAll('#brushSeg button').forEach(x=> x.classList.toggle('on', x === b));
+});
+document.getElementById('btnView').addEventListener('click', ()=>{
+  if (tool === 'orbit') setTool('write');
+  goView(viewMode === 'top' ? 'persp' : 'top');
+});
+document.getElementById('btnCover').addEventListener('click', (e)=>{
+  coverOn = !coverOn;
+  e.currentTarget.classList.toggle('on', coverOn);
+  toast(coverOn ? '🌨️ 落雪覆盖开启：字迹会被新雪慢慢盖住' : '⏸ 落雪覆盖暂停：字迹会一直留着');
+});
+const panel = document.getElementById('panel');
+function togglePanel(){ panel.classList.contains('show') ? closePanel() : openPanel(); }
+function openPanel(){ panel.classList.add('show'); document.querySelector('[data-act=text]').classList.add('on'); setTimeout(()=> document.getElementById('txt').focus(), 60); }
+function closePanel(){ panel.classList.remove('show'); document.querySelector('[data-act=text]').classList.remove('on'); }
+document.getElementById('panelX').addEventListener('click', closePanel);
+document.getElementById('goText').addEventListener('click', stampText);
+document.getElementById('txt').addEventListener('keydown', (e)=>{ if (e.key === 'Enter') stampText(); e.stopPropagation(); });
+addEventListener('keydown', (e)=>{
+  if (e.target.tagName === 'INPUT') return;
+  if (placing){
+    if (e.key === 'Escape') cancelPlacing();
+    if (e.key === 'q' || e.key === 'Q') rotatePlace(-Math.PI/12);
+    if (e.key === 'e' || e.key === 'E') rotatePlace(Math.PI/12);
+    if (e.key === 'Enter') commitPlace();
+    return;
+  }
+  if (mode !== 'out') return;
+  if (e.key === 'v' || e.key === 'V') document.getElementById('btnView').click();
+});
+
+let toastTimer = null;
+function toast(msg){
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.classList.add('on');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=> el.classList.remove('on'), 2600);
+}
+
+/* ============================================================
+   14. 宝丽来
+   ============================================================ */
+const CAPTIONS = ['初雪落进森林里','小屋的灯还亮着','有人在雪地上写下了名字','这一天的雪，很轻',
+  '脚印通往回家的路','雪把世界调成了静音','想在这里多站一会儿','雪人替我守着小屋'];
+let poloIdx = 0, lastPhotoUrl = null, lastCaption = '';
+const IN_CAPTIONS = ['壁炉噼啪作响','小猫在火边睡着了','一杯热可可的时间','窗外还在下雪','木头和松果的味道'];
+function today(){ const d = new Date(); return `${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getDate()).padStart(2,'0')}`; }
+function takePhoto(){
+  const cv = cursor.visible; cursor.visible = false;
+  if (mode === 'trans') return;
+  renderer.render(mode === 'in' ? inScene : scene, mode === 'in' ? inCam : camera);
+  let url;
+  try {
+    // 裁成接近宝丽来的方形
+    const s = Math.min(canvas.width, canvas.height);
+    const c = document.createElement('canvas'); c.width = c.height = Math.min(900, s);
+    c.getContext('2d').drawImage(canvas, (canvas.width - s)/2, (canvas.height - s)/2, s, s, 0, 0, c.width, c.height);
+    url = c.toDataURL('image/jpeg', .9);
+  } catch(e){ toast('这张没拍成，再试一次'); cursor.visible = cv; return; }
+  cursor.visible = cv;
+  const cap = mode === 'in' ? IN_CAPTIONS[poloIdx++ % IN_CAPTIONS.length] : CAPTIONS[poloIdx++ % CAPTIONS.length];
+  lastPhotoUrl = url; lastCaption = cap;
+  if (mode === 'in') updateFramePhoto();
+  const wrap = document.getElementById('polos');
+  const el = document.createElement('div'); el.className = 'polaroid';
+  const rot = (Math.random()*10 - 5).toFixed(1);
+  el.style.transform = `rotate(${rot}deg)`;
+  el.innerHTML = `<img alt=""><div class="cap"></div><div class="meta">${today()} · 雪林小屋</div><button class="x" title="丢掉">✕</button>`;
+  el.querySelector('img').src = url;
+  el.querySelector('.cap').textContent = cap;
+  el.querySelector('.x').addEventListener('click', (ev)=>{ ev.stopPropagation(); el.style.opacity = 0; el.style.transform = 'translateY(16px) rotate(8deg) scale(.9)'; setTimeout(()=> el.remove(), 320); });
+  el.addEventListener('mouseenter', ()=>{ el.style.transform = 'rotate(0) scale(1.06)'; el.style.zIndex = 9; });
+  el.addEventListener('mouseleave', ()=>{ el.style.transform = `rotate(${rot}deg)`; el.style.zIndex = ''; });
+  el.querySelector('img').addEventListener('click', ()=> savePolaroid(url, cap));
+  wrap.appendChild(el);
+  const all = wrap.querySelectorAll('.polaroid'); if (all.length > (isMobile ? 3 : 4)) all[0].remove();
+  const fl = document.getElementById('flash'); fl.classList.remove('go'); void fl.offsetWidth; fl.classList.add('go');
+  shutter();
+  toast('📷 咔嚓！点照片可以保存');
+}
+function savePolaroid(url, cap){
+  const img = new Image();
+  img.onload = ()=>{
+    const Wp = 820, pad = 46, ih = Wp - pad*2;
+    const c = document.createElement('canvas'); c.width = Wp; c.height = pad + ih + 150;
+    const g = c.getContext('2d');
+    g.fillStyle = '#f8f6f1'; g.fillRect(0,0,c.width,c.height);
+    g.drawImage(img, pad, pad, ih, ih);
+    g.fillStyle = '#2b2b28'; g.textAlign = 'center';
+    g.font = `40px "Ma Shan Zheng",${FALLBACK}`;
+    g.fillText(cap, Wp/2, pad + ih + 68);
+    g.fillStyle = '#9d9d95'; g.font = '18px sans-serif';
+    g.fillText(`${today()}  ·  雪林小屋  ·  雪地印记`, Wp/2, pad + ih + 112);
+    const a = document.createElement('a'); a.href = c.toDataURL('image/png'); a.download = '雪地宝丽来.png';
+    document.body.appendChild(a); a.click(); a.remove();
+    toast('已保存这张宝丽来');
+  };
+  img.src = url;
+}
+
+/* ============================================================
+   15. 声音（风雪 + 铃铛 + 踩雪 + 快门）
+   ============================================================ */
+let AC = null, master = null, soundOn = false, windGain = null;
+function initAudio(){
+  const C = window.AudioContext || window.webkitAudioContext; if (!C) return false;
+  AC = new C(); master = AC.createGain(); master.gain.value = 0; master.connect(AC.destination);
+  const len = AC.sampleRate*3, buf = AC.createBuffer(1, len, AC.sampleRate), d = buf.getChannelData(0);
+  let last = 0; for (let i=0;i<len;i++){ last = (last + .022*(Math.random()*2-1))/1.022; d[i] = last*3.4; }
+  const src = AC.createBufferSource(); src.buffer = buf; src.loop = true;
+  const lp = AC.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 520;
+  const wg = AC.createGain(); wg.gain.value = mode === 'in' ? .1 : .55; windGain = wg;
+  src.connect(lp); lp.connect(wg); wg.connect(master); src.start();
+  const lfo = AC.createOscillator(); lfo.frequency.value = .065; const lg = AC.createGain(); lg.gain.value = 260;
+  lfo.connect(lg); lg.connect(lp.frequency); lfo.start();
+  (function bellLoop(){
+    setTimeout(()=>{ if (soundOn){ const ns = [523.25,587.33,659.25,783.99,880,1046.5]; bell(ns[Math.floor(Math.random()*ns.length)], .1 + Math.random()*.06); } bellLoop(); }, 2400 + Math.random()*4800);
+  })();
+  return true;
+}
+function bell(f, v){
+  const t = AC.currentTime, o = AC.createOscillator(), o2 = AC.createOscillator(), g = AC.createGain(), g2 = AC.createGain();
+  o.frequency.value = f; o2.frequency.value = f*2.005; g2.gain.value = .2;
+  o2.connect(g2); g2.connect(g); o.connect(g); g.connect(master);
+  g.gain.setValueAtTime(.0001, t); g.gain.linearRampToValueAtTime(v, t+.02); g.gain.exponentialRampToValueAtTime(.0001, t+3.4);
+  o.start(t); o2.start(t); o.stop(t+3.6); o2.stop(t+3.6);
+}
+function noiseHit(dur, freq, vol, q=1){
+  if (!soundOn || !AC) return;
+  const t = AC.currentTime, len = Math.floor(AC.sampleRate*dur), b = AC.createBuffer(1, len, AC.sampleRate), d = b.getChannelData(0);
+  for (let i=0;i<len;i++) d[i] = (Math.random()*2-1) * Math.pow(1 - i/len, 2.2);
+  const s = AC.createBufferSource(); s.buffer = b;
+  const f = AC.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = freq; f.Q.value = q;
+  const g = AC.createGain(); g.gain.value = vol;
+  s.connect(f); f.connect(g); g.connect(master); s.start(t);
+}
+function setWind(v){ if (!AC || !windGain) return; const t = AC.currentTime; windGain.gain.cancelScheduledValues(t); windGain.gain.setValueAtTime(windGain.gain.value, t); windGain.gain.linearRampToValueAtTime(v, t + 1.2); }
+function tone(type, f0, f1, f2, dur, vol, filt){
+  if (!soundOn || !AC) return;
+  const t = AC.currentTime, o = AC.createOscillator(), g = AC.createGain();
+  o.type = type; o.frequency.setValueAtTime(f0, t); o.frequency.linearRampToValueAtTime(f1, t + dur*.35); o.frequency.linearRampToValueAtTime(f2, t + dur);
+  g.gain.setValueAtTime(.0001, t); g.gain.linearRampToValueAtTime(vol, t + .04); g.gain.exponentialRampToValueAtTime(.0001, t + dur);
+  if (filt){ const f = AC.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = filt; f.Q.value = 1.2; o.connect(f); f.connect(g); } else o.connect(g);
+  g.connect(master); o.start(t); o.stop(t + dur + .05);
+}
+const meow = ()=> tone('sawtooth', 520, 860, 470, .6, .16, 1300);
+const doorCreak = ()=> tone('sawtooth', 110, 170, 95, .8, .05, 700);
+function purr(){
+  if (!soundOn || !AC) return;
+  const t = AC.currentTime, len = Math.floor(AC.sampleRate*1.6), b = AC.createBuffer(1, len, AC.sampleRate), d = b.getChannelData(0);
+  for (let i=0;i<len;i++){ const env = Math.sin(Math.PI*i/len); d[i] = (Math.random()*2-1) * (.5 + .5*Math.sin(i/AC.sampleRate*TAU*24)) * env; }
+  const s = AC.createBufferSource(); s.buffer = b;
+  const f = AC.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 220;
+  const g = AC.createGain(); g.gain.value = 1.4;
+  s.connect(f); f.connect(g); g.connect(master); s.start(t);
+}
+const crackle = (big)=>{ noiseHit(.03 + Math.random()*.04, 2200 + Math.random()*2600, big ? .9 : .45, .7); };
+const slurp = ()=> noiseHit(.35, 650, .4, 2.5);
+const crunch = ()=> noiseHit(.12, 1400 + Math.random()*900, .5, .8);
+const shutter = ()=> noiseHit(.07, 2400, .4, 1);
+document.getElementById('btnSound').addEventListener('click', (e)=>{
+  if (!AC && !initAudio()){ toast('这个浏览器不支持声音'); return; }
+  soundOn = !soundOn;
+  if (AC.state === 'suspended') AC.resume();
+  const t = AC.currentTime;
+  master.gain.cancelScheduledValues(t); master.gain.setValueAtTime(master.gain.value, t);
+  master.gain.linearRampToValueAtTime(soundOn ? .42 : .0001, t + .8);
+  e.currentTarget.classList.toggle('on', soundOn);
+  document.getElementById('sndIc').textContent = soundOn ? '🔊' : '🔈';
+  toast(soundOn ? '🔊 风雪声与铃铛声已开启' : '🔈 已静音');
+});
+
+/* ============================================================
+   15b. 体温 & 林中小屋内部
+   ============================================================ */
+let mode = 'out';                 // out 雪地 | in 小屋里 | trans 过场
+let warmth = 100, coldWarned = 0, warmNotified = false;
+let doorAnim = null;
+const inScene = new THREE.Scene();
+inScene.background = new THREE.Color('#140b06');
+const inCam = new THREE.PerspectiveCamera(isMobile ? 74 : 56, innerWidth/innerHeight, .05, 60);
+const IN_POS = new THREE.Vector3(0, 1.55, 2.7);
+let inYaw = 0, inPitch = -.1, inYawT = 0, inPitchT = -.1;
+const hotspots = [];
+let fireBoost = 0, catPet = 0, sipT = -1, cocoaLeft = 3;
+let fireLight, lanternLight, catBody, catHead, catTail, mugGroup, cocoaTop, frameMat, fireGlow;
+const flames = [], steams = [], hearts = [], treeBulbs = [], candleFlames = [], embers = [];
+const MUG_W = new THREE.Vector3(1.0, .665, -.25);
+
+function canvasTex(w, h, fn){ const t = new THREE.CanvasTexture(makeSprite(fn, w, h)); t.colorSpace = THREE.SRGBColorSpace; return t; }
+const plankTex = canvasTex(512, 512, (g)=>{
+  const r = rng(31), n = 8, h = 512/n, cols = ['#5c3b25','#6a4329','#523421','#734a2e'];
+  for (let i=0;i<n;i++){
+    g.fillStyle = cols[i%4]; g.fillRect(0, i*h, 512, h);
+    g.globalAlpha = .22;
+    for (let k=0;k<14;k++){ g.fillStyle = r() > .5 ? '#3a2416' : '#8a5c3a'; g.fillRect(0, i*h + r()*h, 512, 1 + r()*1.5); }
+    g.globalAlpha = 1; g.fillStyle = '#24160d';
+    g.fillRect(0, i*h, 512, 2); g.fillRect(r()*512, i*h, 2, h);
+  }
+});
+plankTex.wrapS = plankTex.wrapT = THREE.RepeatWrapping; plankTex.repeat.set(2, 2);
+const stoneTex = canvasTex(256, 256, (g)=>{
+  g.fillStyle = '#2e2b28'; g.fillRect(0,0,256,256);
+  const r = rng(8);
+  for (let y=0;y<256;y+=32){
+    let x = -r()*30;
+    while (x < 256){
+      const w = 34 + r()*36, c = Math.floor(92 + r()*58);
+      g.fillStyle = `rgb(${c},${c-7},${c-16})`;
+      g.beginPath(); if (g.roundRect) g.roundRect(x+2, y+2, w-4, 28, 7); else g.rect(x+2, y+2, w-4, 28); g.fill();
+      x += w;
+    }
+  }
+});
+stoneTex.wrapS = stoneTex.wrapT = THREE.RepeatWrapping;
+const rugTex = canvasTex(256, 256, (g)=>{
+  const cols = ['#8e2f2a','#e9d8b8','#2f5a52','#e9d8b8','#b5442f','#e9d8b8','#8e2f2a'];
+  cols.forEach((c,i)=>{ g.fillStyle = c; g.beginPath(); g.arc(128,128,128 - i*17, 0, TAU); g.fill(); });
+});
+const flameTex = canvasTex(64, 128, (g)=>{
+  const gr = g.createRadialGradient(32, 96, 2, 32, 82, 64);
+  gr.addColorStop(0,'rgba(255,250,225,1)'); gr.addColorStop(.25,'rgba(255,205,95,.95)');
+  gr.addColorStop(.55,'rgba(255,115,30,.6)'); gr.addColorStop(1,'rgba(200,40,10,0)');
+  g.fillStyle = gr; g.beginPath(); g.moveTo(32,4); g.bezierCurveTo(58,52,60,92,32,124); g.bezierCurveTo(4,92,6,52,32,4); g.fill();
+});
+const dotTex = canvasTex(64, 64, (g)=>{
+  const r = g.createRadialGradient(32,32,0,32,32,32);
+  r.addColorStop(0,'rgba(255,255,255,1)'); r.addColorStop(.3,'rgba(255,255,255,.6)'); r.addColorStop(1,'rgba(255,255,255,0)');
+  g.fillStyle = r; g.fillRect(0,0,64,64);
+});
+const heartTex = canvasTex(64, 64, (g)=>{
+  g.fillStyle = '#ff6f82';
+  g.beginPath(); g.moveTo(32,56); g.bezierCurveTo(2,34,10,6,32,22); g.bezierCurveTo(54,6,62,34,32,56); g.fill();
+});
+const winMat = new THREE.ShaderMaterial({
+  uniforms: { uTime: { value: 0 } },
+  vertexShader: `varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix*modelViewMatrix*vec4(position,1.0); }`,
+  fragmentShader: `uniform float uTime; varying vec2 vUv;
+    float h(vec2 p){ return fract(sin(dot(p, vec2(127.1,311.7)))*43758.5453); }
+    void main(){
+      vec2 uv = vUv;
+      vec3 c = mix(vec3(0.14,0.22,0.38), vec3(0.02,0.04,0.11), uv.y);
+      float ground = 0.27 + 0.03*sin(uv.x*9.0);
+      for (int i=0;i<6;i++){
+        float fi = float(i);
+        float x = fract(fi*0.37 + 0.08), w = 0.07 + 0.03*h(vec2(fi,2.0)), top = ground + 0.2 + 0.18*h(vec2(fi,5.0));
+        float k = clamp((top - uv.y)/(top - ground + 0.001), 0.0, 1.0);
+        float tri = step(abs(uv.x - x), w*k) * step(ground - 0.03, uv.y) * step(uv.y, top);
+        c = mix(c, vec3(0.04,0.08,0.13), tri);
+      }
+      if (uv.y < ground) c = mix(vec3(0.62,0.71,0.86), vec3(0.45,0.55,0.72), uv.y/ground);
+      c += vec3(0.95,0.97,1.0)*smoothstep(0.065, 0.05, length((uv - vec2(0.8,0.8))*vec2(1.36,1.0)));
+      c += vec3(0.5,0.6,0.8)*0.25*smoothstep(0.3, 0.0, length((uv - vec2(0.8,0.8))*vec2(1.36,1.0)));
+      for (int l=0;l<3;l++){
+        float fl = float(l), sc = 9.0 + fl*7.0;
+        vec2 p = uv*vec2(sc*1.36, sc);
+        p.y += uTime*(0.55 + fl*0.35); p.x += sin(uTime*0.5 + fl)*0.4;
+        vec2 id = floor(p), f = fract(p) - 0.5;
+        vec2 o = vec2(h(id) - 0.5, h(id + 3.1) - 0.5)*0.6;
+        c += vec3(1.0)*smoothstep(0.09 - fl*0.02, 0.0, length(f - o))*0.85*step(0.35, h(id + 7.0));
+      }
+      gl_FragColor = vec4(c, 1.0);
+    }`
+});
+
+const IM = {
+  wall: new THREE.MeshStandardMaterial({ map: (()=>{ const t = woodTexture(false); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(2.4, 1.3); return t; })(), roughness:.85 }),
+  floor: new THREE.MeshStandardMaterial({ map: plankTex, roughness:.7 }),
+  beam: new THREE.MeshStandardMaterial({ color:'#3b2517', roughness:.9 }),
+  stone: new THREE.MeshStandardMaterial({ map: stoneTex, roughness:.95 }),
+  soot: new THREE.MeshStandardMaterial({ color:'#0f0906', roughness:1 }),
+  fabric: new THREE.MeshStandardMaterial({ color:'#7c2f2a', roughness:.95 }),
+  cushion: new THREE.MeshStandardMaterial({ color:'#a7453a', roughness:.95 }),
+  cream: new THREE.MeshStandardMaterial({ color:'#ebdfc6', roughness:1 }),
+  red: new THREE.MeshStandardMaterial({ color:'#b3322b', roughness:.9 }),
+  green: new THREE.MeshStandardMaterial({ color:'#2f6b4c', roughness:.9 }),
+  pine: new THREE.MeshStandardMaterial({ color:'#1f4a3a', roughness:.95 }),
+  curtain: new THREE.MeshStandardMaterial({ color:'#6e2b2a', roughness:1 }),
+  iron: M.iron
+};
+
+function buildInterior(){
+  const R = inScene;
+  R.add(new THREE.HemisphereLight('#ffd7a8', '#2a1a10', .5));
+  R.add(new THREE.AmbientLight('#ffb070', .12));
+  const box = (w, h, d, mat, x, y, z, parent = R)=>{
+    const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
+    m.position.set(x, y, z); m.castShadow = m.receiveShadow = true; parent.add(m); return m;
+  };
+  const tag = (obj, act)=> obj.traverse(m=>{ if (m.isMesh){ m.userData.act = act; hotspots.push(m); } });
+
+  // 地板、墙、天花板
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(8.4, 7.4), IM.floor);
+  floor.rotation.x = -Math.PI/2; floor.receiveShadow = true; R.add(floor);
+  box(8.4, 3.4, .2, IM.wall, 0, 1.7, -3.6);
+  box(.2, 3.4, 7.4, IM.wall, -4.1, 1.7, 0);
+  box(.2, 3.4, 7.4, IM.wall, 4.1, 1.7, 0);
+  box(8.4, 3.4, .2, IM.wall, 0, 1.7, 3.6);
+  const ceil = new THREE.Mesh(new THREE.PlaneGeometry(8.4, 7.4), IM.beam);
+  ceil.rotation.x = Math.PI/2; ceil.position.y = 3.4; R.add(ceil);
+  for (const z of [-2.4, -.6, 1.2, 3.0]) box(8.2, .22, .24, IM.beam, 0, 3.26, z);
+
+  // 石砌壁炉
+  box(.7, 1.3, .6, IM.stone, -1.05, .65, -3.2);
+  box(.7, 1.3, .6, IM.stone, 1.05, .65, -3.2);
+  box(2.8, .38, .62, IM.stone, 0, 1.49, -3.2);
+  box(2.4, 1.75, .5, IM.stone, 0, 2.55, -3.28);
+  box(1.4, 1.3, .1, IM.soot, 0, .65, -3.47);
+  box(1.4, .08, .6, IM.soot, 0, 1.27, -3.2);
+  box(3.3, .1, 1.1, IM.stone, 0, .05, -2.75);
+  box(3.3, .12, .5, IM.beam, 0, 1.74, -2.98);
+  const logG = new THREE.CylinderGeometry(.09, .1, .9, 8);
+  [[.16, .3], [.16, -.35], [.3, 0]].forEach(([y, ry])=>{
+    const l = new THREE.Mesh(logG, IM.beam); l.position.set(0, y, -3.15); l.rotation.set(0, ry, Math.PI/2); R.add(l);
+  });
+  for (let i=0;i<7;i++){
+    const s = new THREE.Sprite(new THREE.SpriteMaterial({ map:flameTex, blending:THREE.AdditiveBlending, depthWrite:false,
+      transparent:true, toneMapped:false, color: new THREE.Color().setHSL(.07 + .03*Math.random(), 1, .62) }));
+    s.userData = { x: lerp(-.36, .36, i/6) + (Math.random()-.5)*.08, ph: Math.random()*TAU, k: .7 + Math.random()*.5 };
+    R.add(s); flames.push(s);
+  }
+  fireGlow = new THREE.Sprite(new THREE.SpriteMaterial({ map:dotTex, color:'#ff8a3a', blending:THREE.AdditiveBlending,
+    depthWrite:false, transparent:true, opacity:.5, toneMapped:false }));
+  fireGlow.position.set(0, .45, -2.95); fireGlow.scale.set(2.4, 1.7, 1); R.add(fireGlow);
+  fireLight = new THREE.PointLight('#ff8a3a', 26, 14, 1.5);
+  fireLight.position.set(0, .7, -2.7);
+  if (!isMobile){ fireLight.castShadow = true; fireLight.shadow.mapSize.set(1024, 1024); fireLight.shadow.bias = -.003; }
+  R.add(fireLight);
+  const fireHit = new THREE.Mesh(new THREE.BoxGeometry(1.5, 1.4, .8), new THREE.MeshBasicMaterial({ visible:false }));
+  fireHit.position.set(0, .65, -3.0); tag(fireHit, 'fire'); R.add(fireHit);
+  for (let i=0;i<40;i++){
+    const s = new THREE.Sprite(new THREE.SpriteMaterial({ map:dotTex, color:'#ffa04a', blending:THREE.AdditiveBlending,
+      depthWrite:false, transparent:true, opacity:0, toneMapped:false }));
+    s.scale.setScalar(.045); s.userData = { life:0, v:new THREE.Vector3() }; R.add(s); embers.push(s);
+  }
+
+  // 壁炉台：袜子、蜡烛、相框
+  [[-.9, IM.red], [0, IM.green], [.9, IM.red]].forEach(([x, m])=>{
+    box(.2, .36, .07, m, x, 1.47, -2.68); box(.25, .09, .09, IM.cream, x, 1.66, -2.68); box(.16, .1, .07, m, x + .07, 1.28, -2.68);
+  });
+  for (const x of [-1.4, 1.4]){
+    const c = new THREE.Mesh(new THREE.CylinderGeometry(.05, .05, .24, 12), IM.cream); c.position.set(x, 1.92, -2.95); R.add(c);
+    const f = new THREE.Sprite(new THREE.SpriteMaterial({ map:flameTex, blending:THREE.AdditiveBlending, depthWrite:false, transparent:true, toneMapped:false }));
+    f.position.set(x, 2.1, -2.95); f.scale.set(.07, .13, 1); R.add(f); candleFlames.push(f);
+    const l = new THREE.PointLight('#ffb060', 1.6, 3, 2); l.position.set(x, 2.15, -2.85); R.add(l);
+  }
+  box(.8, .9, .05, IM.beam, 0, 2.38, -3.0);
+  frameMat = new THREE.MeshBasicMaterial({ map: canvasTex(256, 296, (g)=>{
+    g.fillStyle = '#f8f6f1'; g.fillRect(0,0,256,296); g.fillStyle = '#22344f'; g.fillRect(14,14,228,228);
+    g.fillStyle = '#e6eef8'; g.font = `30px "Ma Shan Zheng",${FALLBACK}`; g.textAlign = 'center'; g.fillText('雪林小屋', 128, 136);
+    g.fillStyle = '#555'; g.font = `19px "Ma Shan Zheng",${FALLBACK}`; g.fillText('拍张照片放这里', 128, 276);
+  }) });
+  const photo = new THREE.Mesh(new THREE.PlaneGeometry(.66, .76), frameMat); photo.position.set(0, 2.38, -2.97); R.add(photo);
+
+  // 地毯、扶手椅、小桌和热可可
+  const rug = new THREE.Mesh(new THREE.CircleGeometry(1.5, 48), new THREE.MeshStandardMaterial({ map:rugTex, roughness:1 }));
+  rug.rotation.x = -Math.PI/2; rug.position.set(0, .012, -1.3); rug.scale.set(1.25, 1, 1); rug.receiveShadow = true; R.add(rug);
+  const chair = new THREE.Group();
+  box(1.1, .4, 1.0, IM.fabric, 0, .35, 0, chair);
+  box(1.1, 1.0, .22, IM.fabric, 0, .9, .44, chair);
+  box(.22, .62, 1.0, IM.fabric, -.55, .55, 0, chair);
+  box(.22, .62, 1.0, IM.fabric, .55, .55, 0, chair);
+  box(.75, .12, .75, IM.cushion, 0, .6, -.05, chair);
+  box(.55, .75, .04, IM.cream, .18, .92, .57, chair).rotation.x = -.1;
+  chair.position.set(1.95, 0, -1.25); chair.rotation.y = .75; R.add(chair);
+
+  const table = new THREE.Group();
+  const top = new THREE.Mesh(new THREE.CylinderGeometry(.34, .34, .05, 24), IM.beam); top.position.y = .62; table.add(top);
+  const leg = new THREE.Mesh(new THREE.CylinderGeometry(.05, .07, .6, 10), IM.beam); leg.position.y = .31; table.add(leg);
+  const foot = new THREE.Mesh(new THREE.CylinderGeometry(.22, .24, .04, 16), IM.beam); foot.position.y = .02; table.add(foot);
+  table.traverse(m=>{ if (m.isMesh){ m.castShadow = m.receiveShadow = true; } });
+  mugGroup = new THREE.Group();
+  const cup = new THREE.Mesh(new THREE.CylinderGeometry(.075, .065, .16, 20), new THREE.MeshStandardMaterial({ color:'#c8463a', roughness:.45 }));
+  cup.position.y = .08; mugGroup.add(cup);
+  cocoaTop = new THREE.Mesh(new THREE.CylinderGeometry(.066, .066, .01, 20), new THREE.MeshStandardMaterial({ color:'#5a3320', roughness:.3 }));
+  cocoaTop.position.y = .155; mugGroup.add(cocoaTop);
+  const handle = new THREE.Mesh(new THREE.TorusGeometry(.045, .014, 8, 16), cup.material); handle.position.set(.085, .08, 0); mugGroup.add(handle);
+  for (const [x, z] of [[-.02, .01], [.025, -.015]]){ const mm = new THREE.Mesh(new THREE.BoxGeometry(.03, .025, .03), IM.cream); mm.position.set(x, .165, z); mugGroup.add(mm); }
+  mugGroup.position.y = .645; table.add(mugGroup);
+  table.position.set(MUG_W.x, 0, MUG_W.z); R.add(table);
+  tag(table, 'cocoa');
+  for (let i=0;i<5;i++){
+    const s = new THREE.Sprite(new THREE.SpriteMaterial({ map:dotTex, color:'#ffffff', transparent:true, depthWrite:false, opacity:0 }));
+    s.userData = { t: i/5, ph: Math.random()*TAU }; R.add(s); steams.push(s);
+  }
+
+  // 火边的小猫
+  const cat = new THREE.Group();
+  const fur = new THREE.MeshStandardMaterial({ color:'#e39a4f', roughness:.95 });
+  const furL = new THREE.MeshStandardMaterial({ color:'#f6dcb8', roughness:.95 });
+  const dark = new THREE.MeshStandardMaterial({ color:'#2b1a12', roughness:.8 });
+  catBody = new THREE.Mesh(new THREE.SphereGeometry(.3, 20, 14), fur);
+  catBody.scale.set(1.15, .62, .85); catBody.position.y = .18; cat.add(catBody);
+  catHead = new THREE.Group();
+  catHead.add(new THREE.Mesh(new THREE.SphereGeometry(.15, 18, 14), fur));
+  for (const sx of [-1, 1]){
+    const ear = new THREE.Mesh(new THREE.ConeGeometry(.055, .11, 4), fur); ear.position.set(sx*.075, .13, 0); ear.rotation.z = -sx*.35; catHead.add(ear);
+    const eye = new THREE.Mesh(new THREE.BoxGeometry(.045, .008, .01), dark); eye.position.set(sx*.055, .025, .138); eye.rotation.z = sx*.15; catHead.add(eye);
+  }
+  const muzzle = new THREE.Mesh(new THREE.SphereGeometry(.065, 12, 10), furL); muzzle.scale.set(1.2, .8, .8); muzzle.position.set(0, -.04, .11); catHead.add(muzzle);
+  const nose = new THREE.Mesh(new THREE.SphereGeometry(.014, 8, 8), new THREE.MeshStandardMaterial({ color:'#d9737a' })); nose.position.set(0, -.015, .16); catHead.add(nose);
+  catHead.position.set(.3, .22, .1); catHead.rotation.y = .55; cat.add(catHead);
+  catTail = new THREE.Mesh(new THREE.TorusGeometry(.3, .045, 8, 22, Math.PI*1.15), fur);
+  catTail.rotation.x = -Math.PI/2; catTail.position.y = .05; cat.add(catTail);
+  cat.position.set(-.65, 0, -1.85); cat.rotation.y = .3;
+  cat.traverse(m=>{ if (m.isMesh){ m.castShadow = m.receiveShadow = true; } });
+  R.add(cat); tag(cat, 'cat');
+  for (let i=0;i<8;i++){
+    const s = new THREE.Sprite(new THREE.SpriteMaterial({ map:heartTex, transparent:true, depthWrite:false, opacity:0, toneMapped:false }));
+    s.scale.setScalar(.12); s.userData = { life:0, v:new THREE.Vector3() }; R.add(s); hearts.push(s);
+  }
+
+  // 窗户（窗外还在下雪）
+  const win = new THREE.Mesh(new THREE.PlaneGeometry(1.7, 1.25), winMat);
+  win.position.set(-3.99, 1.75, -1.6); win.rotation.y = Math.PI/2; R.add(win); tag(win, 'window');
+  box(.1, .1, 1.9, IM.beam, -3.96, 2.42, -1.6); box(.1, .1, 1.9, IM.beam, -3.96, 1.08, -1.6);
+  box(.1, 1.35, .1, IM.beam, -3.96, 1.75, -2.5); box(.1, 1.35, .1, IM.beam, -3.96, 1.75, -.7);
+  box(.06, 1.25, .05, IM.beam, -3.96, 1.75, -1.6); box(.06, .05, 1.7, IM.beam, -3.96, 1.75, -1.6);
+  box(.32, .07, 2.0, IM.beam, -3.88, 1.02, -1.6);
+  box(.08, 2.0, .5, IM.curtain, -3.9, 1.85, -2.85); box(.08, 2.0, .5, IM.curtain, -3.9, 1.85, -.35);
+  const wl = new THREE.PointLight('#9bb8ff', 2.2, 5, 1.6); wl.position.set(-3.4, 1.8, -1.6); R.add(wl);
+
+  // 书架
+  const shelf = new THREE.Group();
+  box(1.6, 2.2, .04, IM.beam, 0, 1.1, -.18, shelf);
+  box(.06, 2.2, .4, IM.beam, -.8, 1.1, 0, shelf); box(.06, 2.2, .4, IM.beam, .8, 1.1, 0, shelf);
+  for (const y of [.05, .6, 1.15, 1.7, 2.2]) box(1.6, .05, .4, IM.beam, 0, y, 0, shelf);
+  const bookCols = ['#8a2f2a','#2f5a52','#c9a24a','#3c4f7a','#6b4a7a','#d9d0bd','#a5553a'].map(c=> new THREE.MeshStandardMaterial({ color:c, roughness:.85 }));
+  const br = rng(55);
+  for (const y of [.075, .625, 1.175, 1.725]){
+    let x = -.74;
+    while (x < .66){
+      const w = .05 + br()*.06, h = .3 + br()*.18;
+      const b = box(w, h, .28, bookCols[Math.floor(br()*bookCols.length)], x + w/2, y + h/2, .02, shelf);
+      if (br() < .12){ b.rotation.z = .25; b.position.x += .04; x += .06; }
+      x += w + .006;
+    }
+  }
+  shelf.position.set(3.78, 0, 1.1); shelf.rotation.y = -Math.PI/2; R.add(shelf);
+
+  // 角落里的小圣诞树
+  const tree = new THREE.Group();
+  box(.42, .3, .42, IM.red, 0, .15, 0, tree);
+  [[.62, .9, .75], [.48, .8, 1.25], [.32, .7, 1.7]].forEach(([r, h, y])=>{
+    const c = new THREE.Mesh(new THREE.ConeGeometry(r, h, 12), IM.pine); c.position.y = y; c.castShadow = true; tree.add(c);
+  });
+  const star = new THREE.Mesh(new THREE.OctahedronGeometry(.08), new THREE.MeshBasicMaterial({ color:'#ffd66b', toneMapped:false }));
+  star.position.y = 2.1; tree.add(star);
+  const bc = ['#ff5a4a', '#ffd06a', '#6ad0ff', '#9cff8a', '#ff8ad8'];
+  for (let i=0;i<20;i++){
+    const t = i/20, y = .45 + t*1.45, r = lerp(.6, .12, t);
+    const a = i*2.4;
+    const m = new THREE.MeshBasicMaterial({ color: bc[i%bc.length], toneMapped:false });
+    const b = new THREE.Mesh(new THREE.SphereGeometry(.03, 8, 8), m);
+    b.position.set(Math.cos(a)*r, y, Math.sin(a)*r);
+    b.userData = { c: new THREE.Color(bc[i%bc.length]), ph: Math.random()*TAU };
+    tree.add(b); treeBulbs.push(b);
+  }
+  tree.position.set(-3.25, 0, -2.85); R.add(tree);
+
+  // 吊灯
+  const chain = new THREE.Mesh(new THREE.CylinderGeometry(.01, .01, .7, 6), IM.iron); chain.position.set(.4, 3.05, -1.2); R.add(chain);
+  const lantern = new THREE.Mesh(new THREE.BoxGeometry(.2, .28, .2), new THREE.MeshBasicMaterial({ color:'#ffd08a', toneMapped:false }));
+  lantern.position.set(.4, 2.58, -1.2); R.add(lantern);
+  const lcap = new THREE.Mesh(new THREE.ConeGeometry(.17, .12, 4), IM.iron); lcap.position.set(.4, 2.78, -1.2); lcap.rotation.y = Math.PI/4; R.add(lcap);
+  lanternLight = new THREE.PointLight('#ffc27a', 6, 9, 1.6); lanternLight.position.set(.4, 2.45, -1.2); R.add(lanternLight);
+
+  // 墙上挂着的雪鞋和围巾
+  const shoeMat = new THREE.MeshStandardMaterial({ color:'#5a3a24', roughness:.9 });
+  for (const z of [-.15, .35]){
+    const shoe = new THREE.Mesh(new THREE.TorusGeometry(.22, .025, 6, 20), shoeMat);
+    shoe.scale.set(1, 1.9, 1); shoe.position.set(3.97, 2.0, z); shoe.rotation.y = Math.PI/2; R.add(shoe);
+  }
+}
+buildInterior();
+
+function spawnEmber(big){
+  const s = embers.find(x=> x.userData.life <= 0); if (!s) return;
+  s.userData.life = 1;
+  s.position.set((Math.random()-.5)*.6, .35, -3.1 + Math.random()*.15);
+  s.userData.v.set((Math.random()-.5)*.3, .6 + Math.random()*(big ? 1.6 : .7), .12 + Math.random()*.25);
+}
+function spawnHeart(){
+  const s = hearts.find(x=> x.userData.life <= 0); if (!s) return;
+  const p = new THREE.Vector3(); catHead.getWorldPosition(p);
+  s.userData.life = 1; s.position.copy(p).add(new THREE.Vector3((Math.random()-.5)*.2, .15, (Math.random()-.5)*.2));
+  s.userData.v.set((Math.random()-.5)*.15, .35 + Math.random()*.2, 0);
+}
+
+function updateInterior(dt, t){
+  fireBoost = Math.max(0, fireBoost - dt*.3);
+  const fl = 1 + Math.sin(t*9)*.08 + Math.sin(t*23)*.05 + (Math.random()-.5)*.08;
+  fireLight.intensity = 26*fl*(1 + fireBoost*.9);
+  flames.forEach((s, i)=>{
+    const u = s.userData;
+    const h = (.55 + .25*Math.sin(t*7 + u.ph) + .12*Math.sin(t*17 + u.ph*2))*u.k*(1 + fireBoost*.7);
+    s.scale.set(.3*(1 + fireBoost*.35), h, 1);
+    s.position.set(u.x + Math.sin(t*5 + u.ph)*.03, .22 + h*.42, -3.12 + (i%2)*.06);
+  });
+  fireGlow.material.opacity = .42 + .08*Math.sin(t*6) + fireBoost*.25;
+  candleFlames.forEach((f, i)=> f.scale.set(.07, .13*(1 + Math.sin(t*11 + i*2)*.12), 1));
+  lanternLight.intensity = 6*(1 + Math.sin(t*1.3)*.03);
+  if (Math.random() < dt*(3 + fireBoost*20)) spawnEmber(fireBoost > .3);
+  for (const s of embers){
+    const u = s.userData; if (u.life <= 0){ s.material.opacity = 0; continue; }
+    u.life -= dt*.7; u.v.x += (Math.random()-.5)*dt*1.5;
+    s.position.addScaledVector(u.v, dt);
+    s.material.opacity = Math.max(0, u.life);
+  }
+  // 小猫
+  catBody.scale.y = .62*(1 + Math.sin(t*2.2)*.035);
+  catPet = Math.max(0, catPet - dt);
+  const pk = Math.sin(clamp(catPet/1.8, 0, 1)*Math.PI);
+  catHead.rotation.x = -pk*.35; catHead.position.y = .22 + pk*.06;
+  catTail.rotation.z = Math.sin(t*(catPet > 0 ? 7 : 1.1))*(catPet > 0 ? .22 : .05);
+  for (const s of hearts){
+    const u = s.userData; if (u.life <= 0){ s.material.opacity = 0; continue; }
+    u.life -= dt*.55; s.position.addScaledVector(u.v, dt);
+    s.material.opacity = Math.min(1, u.life*1.6); s.scale.setScalar(.1 + (1 - u.life)*.06);
+  }
+  // 热可可
+  if (sipT >= 0){
+    sipT += dt;
+    const k = Math.sin(clamp(sipT/1.6, 0, 1)*Math.PI);
+    mugGroup.position.y = .645 + k*.28; mugGroup.rotation.z = k*.55;
+    if (sipT >= 1.6){ sipT = -1; mugGroup.position.y = .645; mugGroup.rotation.z = 0; }
+  }
+  for (const s of steams){
+    s.userData.t += dt*.33; if (s.userData.t > 1) s.userData.t -= 1;
+    const q = s.userData.t;
+    s.position.set(MUG_W.x + Math.sin(q*6 + s.userData.ph)*.04, MUG_W.y + .17 + q*.45 + (mugGroup.position.y - .645), MUG_W.z);
+    s.scale.setScalar(.06 + q*.16);
+    s.material.opacity = Math.sin(q*Math.PI)*.3*(cocoaLeft > 0 ? 1 : .25);
+  }
+  treeBulbs.forEach(b=>{ const k = .4 + .6*(.5 + .5*Math.sin(t*2 + b.userData.ph)); b.material.color.copy(b.userData.c).multiplyScalar(k); });
+  winMat.uniforms.uTime.value = t;
+  // 视角
+  inYaw = lerp(inYaw, inYawT, .1); inPitch = lerp(inPitch, inPitchT, .1);
+  const yaw = inYaw + Math.sin(t*.4)*.012;
+  inCam.position.copy(IN_POS);
+  inCam.position.y += Math.sin(t*.9)*.006;
+  inCam.lookAt(IN_POS.x + Math.sin(yaw)*Math.cos(inPitch), IN_POS.y + Math.sin(inPitch), IN_POS.z - Math.cos(yaw)*Math.cos(inPitch));
+}
+
+function warmUp(v){ warmth = Math.min(100, warmth + v); }
+function act(a){
+  if (a === 'fire'){
+    fireBoost = Math.min(1.6, fireBoost + 1); warmUp(8);
+    for (let i=0;i<16;i++) spawnEmber(true);
+    crackle(true); setTimeout(()=> crackle(true), 120); setTimeout(()=> crackle(false), 260);
+    toast(['🪵 添了一块松木，火苗蹿了起来','🔥 噼啪——火更旺了','🪵 松木的香味飘满了屋子'][Math.floor(Math.random()*3)]);
+  } else if (a === 'cocoa'){
+    if (sipT >= 0) return;
+    if (cocoaLeft <= 0){ cocoaLeft = 3; cocoaTop.position.y = .155; toast('☕ 又续了一杯热可可，还加了棉花糖'); return; }
+    sipT = 0; cocoaLeft--; warmUp(15); slurp();
+    cocoaTop.position.y = .155 - (3 - cocoaLeft)*.035;
+    toast(cocoaLeft > 0 ? '☕ 热可可甜甜的，从喉咙一路暖到手心' : '☕ 喝光啦，再点一下就续杯');
+  } else if (a === 'cat'){
+    catPet = 1.8; warmUp(4);
+    for (let i=0;i<4;i++) setTimeout(spawnHeart, i*160);
+    meow(); setTimeout(purr, 500);
+    toast(['🐱 喵～','🐱 小猫翻了个身，呼噜呼噜','🐱 它往火边又挪了挪','🐱 小猫蹭了蹭你的手'][Math.floor(Math.random()*4)]);
+  } else if (a === 'window'){
+    toast('🪟 窗外的雪还在下，雪地上的字迹正被慢慢盖住');
+  } else if (a === 'photo'){
+    takePhoto();
+  } else if (a === 'out'){
+    exitCabin();
+  }
+}
+
+/* 室内指针：拖动环顾，点击物件 */
+let inDrag = null, inHoverT = 0;
+function pickHot(x, y){
+  setNdc(x, y); ray.setFromCamera(ndc, inCam);
+  const h = ray.intersectObjects(hotspots, false);
+  return h.length ? h[0].object.userData.act : null;
+}
+function inDown(e){
+  if (mode !== 'in') return;
+  inDrag = { x:e.clientX, y:e.clientY, yaw:inYawT, pitch:inPitchT, moved:false, id:e.pointerId };
+  canvas.setPointerCapture && canvas.setPointerCapture(e.pointerId);
+}
+function inMove(e){
+  if (inDrag && e.pointerId === inDrag.id){
+    const dx = e.clientX - inDrag.x, dy = e.clientY - inDrag.y;
+    if (Math.hypot(dx, dy) > 6) inDrag.moved = true;
+    if (inDrag.moved){ inYawT = clamp(inDrag.yaw - dx*.004, -.9, .9); inPitchT = clamp(inDrag.pitch + dy*.003, -.5, .3); }
+  } else if (e.pointerType === 'mouse'){
+    const now = performance.now();
+    if (now - inHoverT > 80){ inHoverT = now; canvas.style.cursor = pickHot(e.clientX, e.clientY) ? 'pointer' : 'grab'; }
+  }
+}
+function inUp(e){
+  if (!inDrag) return;
+  if (!inDrag.moved && mode === 'in'){ const a = pickHot(e.clientX, e.clientY); if (a) act(a); }
+  inDrag = null;
+}
+document.getElementById('indock').addEventListener('click', (e)=>{
+  const b = e.target.closest('[data-in]'); if (!b || mode !== 'in') return;
+  act(b.dataset.in);
+});
+
+function updateFramePhoto(){
+  if (!lastPhotoUrl) return;
+  const img = new Image();
+  img.onload = ()=>{
+    const c = document.createElement('canvas'); c.width = 256; c.height = 296;
+    const g = c.getContext('2d');
+    g.fillStyle = '#f8f6f1'; g.fillRect(0, 0, 256, 296);
+    g.drawImage(img, 14, 14, 228, 228);
+    g.fillStyle = '#3a3a36'; g.font = `21px "Ma Shan Zheng",${FALLBACK}`; g.textAlign = 'center';
+    g.fillText(lastCaption || '雪地印记', 128, 276);
+    const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace;
+    if (frameMat.map) frameMat.map.dispose();
+    frameMat.map = t; frameMat.needsUpdate = true;
+  };
+  img.src = lastPhotoUrl;
+}
+
+/* 进出小屋 */
+const fadeEl = document.getElementById('fade');
+const sleep = (ms)=> new Promise(r=> setTimeout(r, ms));
+function tweenTo(pos, tgt, dur, arc = 0){
+  return new Promise(res=>{
+    tween = { p0: camera.position.clone(), t0v: controls.target.clone(), p1: pos.clone(), t1: tgt.clone(), start: performance.now(), dur, arc, done: res };
+  });
+}
+function animDoor(to, dur = 900){ if (cabinDoor) doorAnim = { from: cabinDoor.rotation.y, to, start: performance.now(), dur }; }
+const DOOR_Z = CABIN_Z + 1.84;
+async function enterCabin(){
+  if (mode !== 'out') return;
+  mode = 'trans';
+  cancelPlacing(); closePanel();
+  drawing = false; activeId = null; sP0 = sMid = null; fLast = null;
+  cursor.visible = false; canvas.style.cursor = '';
+  controls.enabled = false; controls.minPolarAngle = 0; controls.maxPolarAngle = 1.57;
+  toast('🏠 踩着雪走向小屋…');
+  await tweenTo(new THREE.Vector3(.5, 1.9, DOOR_Z + 4.6), new THREE.Vector3(0, 1.25, DOOR_Z), 2300, 1.6);
+  animDoor(-1.75, 900); doorCreak();
+  await sleep(650);
+  fadeEl.classList.add('on');
+  await tweenTo(new THREE.Vector3(0, 1.35, DOOR_Z + .35), new THREE.Vector3(0, 1.3, DOOR_Z - 2), 900, 0);
+  await sleep(120);
+  mode = 'in';
+  inYaw = inYawT = 0; inPitch = inPitchT = -.1;
+  updateFramePhoto();
+  document.body.classList.add('inside');
+  document.getElementById('hint').textContent = '拖动环顾小屋 · 点壁炉添柴、点热可可喝一口、点小猫摸摸它';
+  canvas.className = 'orbit';
+  setWind(.1);
+  warmNotified = false;
+  await sleep(200);
+  fadeEl.classList.remove('on');
+  toast('🔥 进屋啦，好暖和～ 跺跺脚上的雪');
+}
+async function exitCabin(){
+  if (mode !== 'in') return;
+  mode = 'trans';
+  fadeEl.classList.add('on');
+  await sleep(560);
+  document.body.classList.remove('inside');
+  camera.position.set(0, 1.45, DOOR_Z + .4);
+  controls.target.set(0, 1.0, DOOR_Z + 6);
+  camera.lookAt(controls.target);
+  setWind(.55);
+  fadeEl.classList.remove('on');
+  await sleep(350);
+  animDoor(0, 1000); setTimeout(doorCreak, 300);
+  const v = perspView();
+  await tweenTo(v.pos, v.tgt, 2600, 3);
+  viewMode = 'persp'; updateViewBtn('persp');
+  controls.maxPolarAngle = 1.42; controls.enabled = true;
+  mode = 'out';
+  setTool(tool);
+  toast(warmth > 80 ? '❄ 暖和够了，继续去雪地上玩吧' : '❄ 还有点冷哦，玩一会儿再回来烤火');
+}
+
+/* 体温与冰霜 */
+const frostCv = document.getElementById('frost');
+function drawFrost(){
+  const w = innerWidth, h = innerHeight, d = Math.min(devicePixelRatio || 1, 1.5);
+  frostCv.width = Math.floor(w*d); frostCv.height = Math.floor(h*d);
+  const g = frostCv.getContext('2d');
+  g.setTransform(d, 0, 0, d, 0, 0);
+  const gr = g.createRadialGradient(w/2, h/2, Math.min(w, h)*.3, w/2, h/2, Math.hypot(w, h)*.58);
+  gr.addColorStop(0, 'rgba(220,236,255,0)'); gr.addColorStop(.68, 'rgba(220,236,255,.16)'); gr.addColorStop(1, 'rgba(236,246,255,.66)');
+  g.fillStyle = gr; g.fillRect(0, 0, w, h);
+  g.strokeStyle = 'rgba(244,250,255,1)'; g.lineCap = 'round';
+  const r = rng(99);
+  const branch = (x, y, a, len, depth)=>{
+    const x2 = x + Math.cos(a)*len, y2 = y + Math.sin(a)*len;
+    g.lineWidth = Math.max(.5, depth*.6); g.globalAlpha = .16 + depth*.1;
+    g.beginPath(); g.moveTo(x, y); g.lineTo(x2, y2); g.stroke();
+    if (depth <= 0) return;
+    for (const f of [.35, .7]){
+      const bx = x + (x2 - x)*f, by = y + (y2 - y)*f;
+      branch(bx, by, a + .75 + (r() - .5)*.3, len*.4, depth - 1);
+      branch(bx, by, a - .75 + (r() - .5)*.3, len*.4, depth - 1);
+    }
+    branch(x2, y2, a + (r() - .5)*.4, len*.55, depth - 1);
+  };
+  const N = Math.round((w + h)/30);
+  for (let i=0;i<N;i++){
+    const side = Math.floor(r()*4), L = 26 + r()*Math.min(w, h)*.11;
+    let x, y, a;
+    if (side === 0){ x = r()*w; y = 0; a = Math.PI/2; }
+    else if (side === 1){ x = w; y = r()*h; a = Math.PI; }
+    else if (side === 2){ x = r()*w; y = h; a = -Math.PI/2; }
+    else { x = 0; y = r()*h; a = 0; }
+    branch(x, y, a + (r() - .5)*1.1, L, 3);
+  }
+  g.globalAlpha = 1;
+}
+const tempFill = document.getElementById('tempFill'), tempTx = document.getElementById('tempTx'), btnCabin = document.getElementById('btnCabin');
+let lastFrost = -1, lastTempUI = -1;
+function updateWarmth(dt){
+  if (mode === 'out') warmth = Math.max(0, warmth - dt*.55);
+  else if (mode === 'in') warmth = Math.min(100, warmth + dt*(6 + fireBoost*6));
+  const w = Math.round(warmth);
+  if (w !== lastTempUI){
+    lastTempUI = w;
+    tempFill.style.width = w + '%';
+    tempTx.textContent = w > 70 ? '暖和' : w > 42 ? '有点冷' : w > 16 ? '好冷' : '冻僵了';
+    btnCabin.classList.toggle('call', w < 45);
+  }
+  const fr = Math.round(clamp((65 - warmth)/65, 0, 1)*100)/100;
+  if (fr !== lastFrost){ lastFrost = fr; frostCv.style.opacity = (fr*.95).toFixed(2); }
+  if (mode === 'out'){
+    if (warmth < 45 && coldWarned < 1){ coldWarned = 1; toast('🥶 有点冷了… 点「🏠 进屋取暖」或直接点小屋'); }
+    if (warmth < 18 && coldWarned < 2){ coldWarned = 2; toast('🥶 手都冻僵了！快去小屋里烤烤火'); }
+    if (warmth > 80) coldWarned = 0;
+  } else if (mode === 'in' && warmth >= 99.5 && !warmNotified){
+    warmNotified = true; toast('😊 全身都暖和起来了，随时可以「🚪 出门玩雪」');
+  }
+}
+
+/* ============================================================
+   16. 主循环
+   ============================================================ */
+let last = performance.now(), coverAcc = 0, uploadAcc = 0;
+function loop(now){
+  const dt = Math.min(.05, (now - last)/1000); last = now;
+  const tSec = now/1000;
+
+  snowU.uTime.value = tSec;
+  snowU.uCenter.value.set(controls.target.x, 0, controls.target.z);
+  aurora.material.uniforms.uTime.value = tSec;
+
+  updateTween(now);
+  if (doorAnim && cabinDoor){
+    const dp = clamp((now - doorAnim.start)/doorAnim.dur, 0, 1);
+    cabinDoor.rotation.y = lerp(doorAnim.from, doorAnim.to, ease(dp));
+    if (dp >= 1) doorAnim = null;
+  }
+  if (!tween && mode === 'out') controls.update();
+
+  for (const sm of snowmen) sm.update(now);
+  for (let i=angels.length-1;i>=0;i--){ angels[i].update(now); if (angels[i].done) angels.splice(i,1); }
+  updateTextJobs(now);
+  updatePuffs(dt);
+  updateSmoke(dt);
+
+  // 灯光轻微呼吸
+  const fl = 1 + Math.sin(tSec*2.3)*.04 + Math.sin(tSec*5.1)*.02;
+  windowLights.forEach(l=> l.intensity = 22*fl);
+  lampLights.forEach((l,i)=> l.intensity = 18*(1 + Math.sin(tSec*1.7 + i)*.03));
+
+  // 新雪覆盖
+  if (clearing > 0){ coverStep(16); clearing--; }
+  else if (coverOn){
+    coverAcc += dt;
+    if (coverAcc > .26){ coverAcc = 0; coverStep(1); }
+  }
+
+  // 上传高度图（最多每帧一次）
+  if (hDirty){ hTex.needsUpdate = true; hDirty = false; }
+
+  updateWarmth(dt);
+  if (placing) placing.mat.opacity = .62 + .25*Math.sin(tSec*4);
+
+  if (mode === 'in'){
+    updateInterior(dt, tSec);
+    if (soundOn && Math.random() < dt*(1.6 + fireBoost*6)) crackle(fireBoost > .5);
+    renderer.render(inScene, inCam);
+  } else {
+    let sh = 0;
+    if (mode === 'out' && !tween && warmth < 22) sh = (22 - warmth)/22 * .06;
+    const ox = (Math.random()-.5)*sh, oy = (Math.random()-.5)*sh;
+    camera.position.x += ox; camera.position.y += oy;
+    renderer.render(scene, camera);
+    camera.position.x -= ox; camera.position.y -= oy;
+  }
+  requestAnimationFrame(loop);
+}
+
+function onResize(){
+  camera.aspect = innerWidth/innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+  inCam.aspect = innerWidth/innerHeight; inCam.updateProjectionMatrix();
+  drawFrost();
+  if (!tween && mode === 'out') goView(viewMode, true);
+}
+addEventListener('resize', onResize);
+
+goView('persp', true);
+setTool('write');
+drawFrost();
+requestAnimationFrame((t)=>{ last = t; loop(t); });
+window.__snowReady = true;
+setTimeout(()=>{ document.getElementById('loading').classList.add('hide'); }, 300);
+setTimeout(()=> toast(isMobile ? '❄ 手指在雪地上写字试试' : '❄ 在雪地上写字试试 · 按 V 切换平铺视角'), 1400);
+</script>
+</body>
+</html>
