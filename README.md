@@ -4,12 +4,11 @@
 
 一个可以在浏览器里直接玩的 **3D 冬日互动网页**：在月光下的雪地上写字、踩脚印、躺下印雪天使、堆雪人、拍宝丽来；冷了就推门走进林中小屋，烤火、喝热可可、撸猫。
 
-整个项目只有 **一个 HTML 文件**，不需要构建，也没有后端，打开就能用。
+🔗 **在线体验**：https://moonpie-cr.github.io/snowimprint/
 
-🔗 **在线体验**：`https://<你的 GitHub 用户名>.github.io/<仓库名>/`
+<img width="1920" height="989" alt="image" src="https://github.com/user-attachments/assets/840c5fc2-0910-4b40-b6b7-c5ee57ff7aa8" />
+<img width="1920" height="989" alt="image" src="https://github.com/user-attachments/assets/da425b08-9b26-42be-a84c-d3df4e1cbfd7" />
 
-<!-- 部署好后，可以把截图放到 screenshots/ 目录，再取消下面这行的注释 -->
-<!-- ![预览](screenshots/preview.png) -->
 
 ---
 
